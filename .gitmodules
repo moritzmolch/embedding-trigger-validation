@@ -1,0 +1,6 @@
+[submodule "modules/law"]
+	path = modules/law
+	url = git@github.com:riga/law.git
+[submodule "modules/scinum"]
+	path = modules/scinum
+	url = git@github.com:riga/scinum.git
