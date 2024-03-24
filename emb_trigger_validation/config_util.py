@@ -1,5 +1,6 @@
 from functools import wraps
 import json
+from law.util import DotDict
 from order import Campaign, Config, Dataset, Process, UniqueObjectIndex
 import os
 import subprocess
@@ -135,7 +136,7 @@ class ConfigManager(metaclass=ConfigManagerMeta):
 
         # load the campaign and create the config object
         cpn = self._create_campaign(cfg["campaign"])
-        config = Config(name=cpn.name, id="+", campaign=cpn)
+        config = self._create_config(cfg["config"], cpn)
 
         # add the path of the original configuration file to the auxiliary data
         config.x.config_path = config_path
@@ -156,11 +157,25 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         },
         optional={
             ("label", str),
+            ("aux", dict),
+        }
+    )
+    def _create_config(self, cfg_cfg: Dict[str, Any], cpn: Campaign) -> Config:
+        # create the config given the information from the loaded configuration
+        config = Config(name=cfg_cfg.pop("name"), id="+", campaign=cpn, aux=DotDict.wrap(cfg_cfg.get("aux", {})))
+        return config
+
+    @check_keys(
+        required={
+            ("name", str),
+        },
+        optional={
+            ("aux", dict),
         }
     )
     def _create_campaign(self, cfg_cpn: Dict[str, Any]) -> Campaign:
         # create the campaign given the information from the loaded configuration
-        cpn = Campaign(name=cfg_cpn.pop("name"), id="+", aux=cfg_cpn)
+        cpn = Campaign(name=cfg_cpn["name"], id="+", aux=DotDict.wrap(cfg_cpn.get("aux", {})))
         return cpn
 
     def _create_processes(self, cfg_processes: List[Dict[str, Any]], config: Config) -> UniqueObjectIndex:
@@ -206,7 +221,8 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         },
         optional={
             ("process", str),
-            ("dbs_instance", str),
+            ("is_data", bool),
+            ("aux", dict),
         }
     )
     def _create_dataset(self, cfg_ds: Dict[str, Any], config: Config) -> UniqueObjectIndex:
@@ -227,7 +243,7 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         if not os.path.exists(metadata_file_path):
             # get key and DBS instance of the dataset to perform DAS queries
             metadata["key"] = cfg_ds["key"]
-            metadata["dbs_instance"] = cfg_ds.get("dbs_instance", "prod/global")
+            metadata["dbs_instance"] = cfg_ds.setdefault("aux", {}).get("dbs_instance", "prod/global")
 
             # get the logical file names of the dataset
             metadata["lfns"] = self._get_das_dataset_lfns(metadata["key"], metadata["dbs_instance"])
@@ -242,6 +258,14 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             with open(metadata_file_path, mode="r") as f:
                 metadata = yaml.safe_load(f)
 
+        # construct the dictionary with auxiliary information
+        aux_dict = cfg_ds.get("aux", {})
+        aux_dict.update({
+            "dbs_instance": metadata["dbs_instance"],
+            "dbs_id": metadata["dbs_id"],
+            "lfns": metadata["lfns"],
+        })
+
         # create the dataset object
         dataset = Dataset(
             name=cfg_ds["name"],
@@ -249,11 +273,8 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             keys=[metadata["key"]],
             n_events=metadata["n_events"],
             n_files=metadata["n_files"],
-            aux={
-                "dbs_instance": metadata["dbs_instance"],
-                "dbs_id": metadata["dbs_id"],
-                "lfns": metadata["lfns"],
-            }
+            is_data=cfg_ds.get("is_data", None),
+            aux=DotDict.wrap(aux_dict),
         )
 
         # add the process if it has been specified
