@@ -14,15 +14,7 @@ import shlex
 from typing import Dict, List, Optional
 
 
-logging.basicConfig(level=logging.DEBUG)
 logger = get_logger(__name__)
-
-
-class DummyTask(law.Task):
-    def run(self):
-        pass
-
-dummy_task = DummyTask()
 
 
 class CMSSWSandbox():
