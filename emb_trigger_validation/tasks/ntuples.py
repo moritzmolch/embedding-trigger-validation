@@ -89,7 +89,7 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow)
         # run the command in a CMSSW sandbox
         self.run_command(cmd, popen_kwargs={"cwd": tmpdir_target.path})
 
+        # copy the output file to its final destination
         if not self.output().parent.exists():
             self.output().parent.touch()
-
         output.copy_from_local(tmp_ntuple_target)
