@@ -8,6 +8,7 @@ import json
 import law
 from law.logger import get_logger
 from law.util import create_hash, readable_popen
+from law.contrib.wlcg import get_vomsproxy_file
 import logging
 import os
 import shlex
@@ -87,7 +88,9 @@ class CMSSWSandbox():
         cmd_clean = [
             "/usr/bin/env",
             "-i",
-            "X509_USER_PROXY={}".format(os.environ.get("X509_USER_PROXY", "")),
+            "HOME={}".format(os.environ["HOME"]),
+            "USER={}".format(os.environ["USER"]),
+            "X509_USER_PROXY={}".format(get_vomsproxy_file()),
             "bash",
             "-c",
             cmd,
