@@ -7,14 +7,12 @@ Sandbox for handling CMSSW environments
 import json
 import os
 import shlex
+import shutil
 from typing import Dict, List, Optional
 
 from law import Task
 from law.logger import get_logger
 from law.util import create_hash, readable_popen
-from law.contrib.tasks import TransferLocalFile
-from law.contrib.wlcg import get_vomsproxy_file
-
 
 
 logger = get_logger(__name__)
@@ -64,11 +62,9 @@ class CMSSWSandbox():
         arch: str,
         custom_packages_script: Optional[str] = None,
         threads: int = 1,
-        bundle_task: Optional[TransferLocalFile] = None,
     ):
         # tasks to which this sandbox is connected
         self._task = task
-        self._bundle_task = bundle_task
 
         # base attributes of the CMSSW release
         self._parent_dir = parent_dir
@@ -76,6 +72,16 @@ class CMSSWSandbox():
         self._arch = arch
         self._custom_packages_script = custom_packages_script
         self._threads = threads
+
+        # remote task arguments
+        self._is_remote = os.environ.get("ETV_REMOTE", "0") == "1"
+        self._tarball_uris = os.environ.get("ETV_CMSSW_URIS", None)
+        self._tarball_pattern = os.environ.get("ETV_CMSSW_PATTERN", None)
+
+        # check that tarball information is available if this is a remote job
+        if self._is_remote:
+            if self._tarball_uris is None or self._tarball_pattern is None:
+                raise OSError("obtained values '{}' for tarball URIs and '{}' for tarball patterns despite being inside a remote job".format(self._tarball_uris, self._tarball_pattern))
 
         # set the path to the CMSSW setup executable
         self._cmssw_setup_exec = os.path.join(os.path.abspath(os.path.dirname(__file__)), "cmssw_setup.sh")        
@@ -88,25 +94,35 @@ class CMSSWSandbox():
         self._env_cache_file = os.path.join(self._env_cache_dir, "{}.json".format(self._hash))
 
     def _build_bash_command_in_clean_env(self, cmd: str) -> List[str]:
+        # get the correct env command
+        env_cmd = shutil.which("env")
+
         # embed the bash commands in a clean environment
         cmd_clean = [
-            "/usr/bin/env",
+            env_cmd,
             "-i",
             "HOME={}".format(os.environ["HOME"]),
             "USER={}".format(os.environ["USER"]),
-            "X509_USER_PROXY={}".format(get_vomsproxy_file()),
+            "X509_USER_PROXY={}".format(os.environ.get("X509_USER_PROXY", "")),
+        ]
+
+        # add all ETV_* environment variables
+        cmd_clean.extend([
+            "{}={}".format(variable, os.environ[variable]) for variable in os.environ if variable.startswith("ETV_")
+        ])
+
+        # append the bash command
+        cmd_clean.extend([
             "bash",
             "-c",
             cmd,
-        ]
+        ])
 
         logger.debug("{}.{}: set up command {}".format(self.__class__.__name__, self._build_bash_command_in_clean_env.__name__, cmd_clean))
 
         return cmd_clean
 
     def _build_cmssw_setup_command(self) -> str:
-        # check if we are inside of a remote job
-        is_remote = True if os.environ.get("ETV_REMOTE", "0") == "1" else False
 
         # command for execution inside bash to set up CMSSW
         cmd_cmssw = [
@@ -128,16 +144,13 @@ class CMSSWSandbox():
             ])
 
         # add tarball information for remote jobs
-        if is_remote:
-            if not isinstance(self._bundle_task, TransferLocalFile):
-                raise AttributeError("member bundle_task must be subclass of law.contrib.tasks.TransferLocalFile")
-
+        if self._is_remote:
             cmd_cmssw.extend([
                 "--remote",
                 "--tarball-uris",
-                self._get_tarball_uris(self._bundle_task),
+                self._tarball_uris,
                 "--tarball-pattern",
-                self._get_tarball_pattern(self._bundle_task),
+                self._tarball_pattern,
             ])
 
         # convert the command list into a properly quoted string
@@ -165,14 +178,6 @@ class CMSSWSandbox():
 
         return cmd_env
 
-    def _get_tarball_uris(self, bundle_task: TransferLocalFile) -> List[str]:
-        uris = bundle_task.output().dir.uri(cmd="filecopy", return_all=True)
-        return ",".join(uris)
-    
-    def _get_tarball_pattern(self, bundle_task: TransferLocalFile) -> str:
-        pattern = os.path.basename(bundle_task.get_file_pattern())
-        return pattern
-
     def get_env(self) -> Dict[str, str]:
         """
         TODO add documentation
@@ -194,7 +199,6 @@ class CMSSWSandbox():
             cmd = self._build_bash_command_in_clean_env(
                 " && ".join([
                     "source /etc/profile",
-                    "source {}/.profile".format(os.environ["HOME"]),
                     self._build_cmssw_setup_command(),
                     self._build_dump_env_command(self._env_cache_file),
                 ])

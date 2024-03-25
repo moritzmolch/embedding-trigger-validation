@@ -5,6 +5,7 @@ import law.contrib.wlcg
 from law.util import iter_chunks, readable_popen
 import luigi
 import os
+import shlex
 from typing import Any, Dict, List, Optional, Union
 
 from emb_trigger_validation.config_util import ConfigManager
@@ -49,11 +50,11 @@ class BaseTask(law.Task):
 
     @classmethod
     def get_remote_file_system(cls, name: str) -> law.contrib.wlcg.WLCGFileSystem:
-        if name not in cls._remote_file_systems:
+        if name not in cls._wlcg_stores:
             if not law.Config.instance().has_section(name):
                 raise RuntimeError("no config section for remote file system '{}' found".format(name))
-            cls._remote_file_systems[name] = law.contrib.wlcg.WLCGFileSystem(name)
-        return cls._remote_file_systems[name]
+            cls._wlcg_stores[name] = law.contrib.wlcg.WLCGFileSystem(name)
+        return cls._wlcg_stores[name]
 
     def path(self, store, *parts, **kwargs) -> str:
         return os.path.join(store, self.version, self.__class__.__name__, *parts)
@@ -64,9 +65,9 @@ class BaseTask(law.Task):
         return target_class(self.path(store, *parts, **kwargs))
 
     def remote_target(self, *parts, **kwargs):
-        fs_name = kwargs.pop("fs_name", None) or self.remote_store_fs_name
+        fs_name = kwargs.pop("fs_name", None) or self.wlcg_store_name
         fs = self.__class__.get_remote_file_system(fs_name)
-        store = kwargs.pop("store", None) or self.remote_store_path
+        store = kwargs.pop("store", None) or self.wlcg_store_path
         target_class = law.contrib.wlcg.WLCGDirectoryTarget if kwargs.pop("is_dir", False) else law.contrib.wlcg.WLCGFileTarget
         return target_class(self.path(store, *parts, **kwargs), fs=fs)
 
@@ -137,7 +138,6 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
             self.cmssw_release(),
             self.cmssw_arch(),
             custom_packages_script=self.cmssw_custom_packages_script(),
-            threads=self.cmssw_threads,
         )
 
     @abstractmethod
@@ -176,14 +176,11 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
         """
         return NotImplemented
 
-    #def cmssw_threads(self) -> int:
-    #    """
-    #    Number of threads used for compiling the CMSSW release.
-    #
-    #    :returns: number of threads for compilation; default: 1
-    #    :rtype:   int
-    #    """
-    #    return 1
+    def cmssw_path(self) -> str:
+        """
+        TODO add documentation
+        """
+        return os.path.join(self.cmssw_parent_dir(), self.cmssw_release())
 
     def cmssw_custom_packages_script(self) -> Union[str, None]:
         """
@@ -234,7 +231,7 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
         })
 
         # run the command
-        with self.publish_step("run command {}".format(cmd)):
+        with self.publish_step("run command {}".format(shlex.join(cmd))):
             p, lines = readable_popen(cmd, **popen_kwargs)
 
             while True:

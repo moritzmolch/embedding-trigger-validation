@@ -9,8 +9,8 @@ _setup_grid_variables () {
     export GLOBUS_THREAD_MODEL="${GLOBUS_THREAD_MODEL:-none}"
     export X509_CERT_DIR="${X509_CERT_DIR:-/cvmfs/grid.cern.ch/etc/grid-security/certificates}"
     export X509_VOMS_DIR="${X509_VOMS_DIR:-/cvmfs/grid.cern.ch/etc/grid-security/vomsdir}"
-    export X509_USER_PROXY="${X509_USER_PROXY:-/tmp/x509up_u$(/usr/bin/id -u)}"
     export X509_VOMSES="${X509_VOMSES:-/cvmfs/grid.cern.ch/etc/grid-security/vomses}"
+    export X509_USER_PROXY="${X509_USER_PROXY:-/tmp/x509up_u$(/usr/bin/id -u)}"
     export VOMS_USERCONF="${VOMS_USERCONF:-${X509_VOMSES}}"
 
     # gfal-related variables
@@ -60,14 +60,14 @@ action () {
     _setup_grid_variables || return "${?}"
 
     # additional dependencies (law, order, scinum)
-    export PYTHONPATH="${ETV_BASE_PATH}:${ETV_MODULES_PATH}/law:${ETV_MODULES_PATH}/order:${ETV_MODULES_PATH}/scinum:${PYTHONPATH}"
-    export PATH="${ETV_MODULES_PATH}/law/bin:${PATH}"
+    export PYTHONPATH="${ETV_BASE_PATH}:${ETV_MODULES_PATH}/law:${ETV_MODULES_PATH}/order:${ETV_MODULES_PATH}/scinum:${ETV_MODULES_PATH}/luigi:${PYTHONPATH}"
+    export PATH="${ETV_MODULES_PATH}/law/bin:${ETV_MODULES_PATH}/luigi/bin:${PATH}"
 
     # configuration and output paths for law
     export LAW_HOME="${this_dir}/.law"
     export LAW_CONFIG_FILE="${this_dir}/law.cfg"
 
-    if which law; then
+    if which law &> /dev/null; then
         law index --quiet
         source "$( law completion )" ""
     fi

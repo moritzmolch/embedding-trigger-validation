@@ -5,9 +5,11 @@ import os
 from typing import Union
 
 from emb_trigger_validation.tasks.base import CMSSWCommandTask, DatasetTask
+from emb_trigger_validation.tasks.remote import BaseHTCondorWorkflow
+from emb_trigger_validation.tasks.bundle import BundleCMSSW
 
 
-class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow):
+class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow, BaseHTCondorWorkflow):
 
     threads = luigi.IntParameter(
         description="number of threads used for executing the cmsRun command; default: 1",
@@ -40,6 +42,11 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow)
         # return the extended branch map
         return branch_map
 
+    def htcondor_workflow_requires(self):
+        reqs = super(ProduceTauTriggerNtuples, self).htcondor_workflow_requires()
+        reqs["BundleCMSSW"] = BundleCMSSW.req(self, cmssw_path=self.cmssw_path())
+        return reqs
+
     def cmssw_parent_dir(self) -> str:
         cmssw_hash = create_hash((self.cmssw_release(), self.cmssw_arch(), self.cmssw_custom_packages_script()))
         return os.path.join(os.environ["ETV_SOFTWARE_PATH"], "cmssw", "{}_{}".format(self.cmssw_release(), cmssw_hash))
@@ -70,7 +77,7 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow)
         ]
 
     def output(self):
-        return self.local_target(self.branch_data["output_filename"])
+        return self.remote_target(self.branch_data["output_filename"])
 
     def run(self):
         output = self.output()

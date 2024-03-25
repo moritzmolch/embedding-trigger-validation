@@ -6,7 +6,7 @@ from law.util import human_bytes
 import luigi
 import os
 
-from emb_trigger_studies.tasks.framework.base import BaseTask
+from emb_trigger_validation.tasks.base import BaseTask
 
 
 class BundleRepository(

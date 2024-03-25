@@ -8,8 +8,8 @@ from law.util import law_src_path, merge_dicts
 import luigi
 import os
 
-from emb_trigger_studies.tasks.framework.base import BaseTask
-from emb_trigger_studies.tasks.framework.bundle import BundleCMSSW, BundleMamba, BundleRepository
+from emb_trigger_validation.tasks.base import BaseTask
+from emb_trigger_validation.tasks.bundle import BundleRepository
 
 
 class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
@@ -109,7 +109,6 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
     def htcondor_workflow_requires(self):
         reqs = OrderedDict(law.contrib.htcondor.HTCondorWorkflow.htcondor_workflow_requires(self))
         reqs["BundleRepository"] = BundleRepository.req(self)
-        reqs["BundleCMSSW"] = BundleCMSSW.req(self)
         return reqs
 
     def htcondor_output_directory(self):
@@ -120,17 +119,17 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
             self.htcondor_job_file_factory_defaults, {"universe": self.htcondor_universe}, kwargs
         )
         factory = super(BaseHTCondorWorkflow, self).htcondor_create_job_file_factory(**kwargs)
-        factory.is_tmp = False  # TODO for testing purposes, remove later
+        factory.is_tmp = True
         return factory
 
     def htcondor_bootstrap_file(self):
-        return os.path.join(os.path.expandvars("${ETS_BOOTSTRAP_PATH}"), "htcondor_bootstrap.sh")
+        return os.path.join(os.path.expandvars("${ETV_BASE_PATH}"), "scripts", "bootstrap.sh")
 
     def htcondor_job_config(self, config, job_num, branches):
 
         # create directory for log files if it doesn't exist
         log_dir = os.path.join(
-            self.htcondor_output_directory(),
+            self.htcondor_output_directory().path,
             "logs",
         )
         log_target = law.LocalDirectoryTarget(log_dir)
@@ -211,14 +210,19 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
             return ",".join(uris), pattern
 
         # render variables in bootstrap script
-
         config.render_variables["etv_user"] = os.environ["USER"]
-        config.render_variables["etv_bootstrap_name"] = "base"
+        config.render_variables["etv_bootstrap_name"] = "htcondor"
 
         uris, pattern = get_bundle_info(reqs["BundleRepository"])
         config.render_variables["etv_repo_name"] = os.path.basename(os.environ["ETV_BASE_PATH"])
         config.render_variables["etv_repo_uris"] = uris
         config.render_variables["etv_repo_pattern"] = pattern
+
+        uris, pattern = "", ""
+        if "BundleCMSSW" in reqs:
+            uris, pattern = get_bundle_info(reqs["BundleCMSSW"])
+        config.render_variables["etv_cmssw_uris"] = uris
+        config.render_variables["etv_cmssw_pattern"] = pattern
 
         return config
 

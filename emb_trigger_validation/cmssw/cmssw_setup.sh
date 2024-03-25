@@ -163,7 +163,7 @@ _setup_cmssw () {
 
         # paths for sourcing grid access and access to wlcg tools before the full environment has been loaded
         local grid_wn_script="/cvmfs/grid.cern.ch/centos7-wn-4.0.5-1_umd4v1/etc/profile.d/setup-c7-wn-example.sh"
-        local wlcg_tools_script="${ETV_MODULES_PATH}/law/law/contrib/wlcg/scripts/wlcg_tools.sh"
+        local wlcg_tools_script="${ETV_MODULES_PATH}/law/law/contrib/wlcg/scripts/law_wlcg_tools.sh"
 
         # ensure that needed environment variables are set
         if [[ -z "${ETV_MODULES_PATH}" ]]; then
@@ -176,14 +176,22 @@ _setup_cmssw () {
             mkdir -p "${cmssw_path}"
         fi
 
-        # unpack the analysis repository in a sub-shell
+        # pull the release, unpack the tarball and compile it again
         (
-            cd "${cmssw_path}" &&
-            source "${grid_wn_script}" "" &&
+            _cmsset_default &&
+            _wlcg_setup &&
             source "${wlcg_tools_script}" "" &&
+            export SCRAM_ARCH="${_CMSSW_ARCH}" &&
+            cd "${base_path}" &&
+            _info "pulling release '${_CMSSW_RELEASE}'" &&
+            scramv1 project CMSSW "${_CMSSW_RELEASE}" &&
+            cd "${cmssw_path}" &&
             law_wlcg_get_file "${_CMSSW_TARBALL_URIS}" "${_CMSSW_TARBALL_PATTERN}" "cmssw.tgz" &&
             tar -xzf "cmssw.tgz" &&
-            rm "cmssw.tgz"
+            rm "cmssw.tgz" &&
+            cd "${cmssw_src_path}" &&
+            scramv1 build -j "${_CMSSW_THREADS}" &&
+            scramv1 build python
         ) || return "$?"
 
     fi
@@ -198,6 +206,7 @@ _setup_cmssw () {
     local ret_code;
     _info "set up CMSSW release '${_CMSSW_RELEASE}'"
     cd "${cmssw_src_path}" || (ret_code="${?}" && _error "directory ${cmssw_src_path} does not exist" && cd "${current_dir}" && return "${ret_code}" )
+    echo "${cmssw_src_path}"
     eval "$(scramv1 runtime -sh)"
     cd "${current_dir}"
 
@@ -214,8 +223,9 @@ _parse_args () {
     local threads
     local has_custom_packages_script
     local custom_packages_script
-    local tarball
     local is_remote
+    local tarball_uris
+    local tarball_pattern
 
     # loop over command-line inputs
     while [[ ${#} -gt 0 ]]; do
