@@ -2,8 +2,9 @@ from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 import law
 import law.contrib.wlcg
-from law.util import iter_chunks, readable_popen
+from law.util import create_hash, iter_chunks, readable_popen
 import luigi
+from order import Config
 import os
 import shlex
 from typing import Any, Dict, List, Optional, Union
@@ -83,7 +84,11 @@ class ConfigTask(BaseTask):
 
     def __init__(self, *args, **kwargs):
         super(ConfigTask, self).__init__(*args, **kwargs)
-        self.config_inst = ConfigManager().load_config(os.path.join(os.environ["ETV_CONFIG_PATH"], "analysis", self.config, "config.yaml"))
+        self.config_inst = self.get_config(self.config)
+
+    @staticmethod
+    def get_config(name: str) -> Config:
+        return ConfigManager().load_config(os.path.join(os.environ["ETV_CONFIG_PATH"], "analysis", name, "config.yaml"))
 
     def path(self, store, *parts, **kwargs) -> str:
         return os.path.join(store, self.version, self.__class__.__name__, self.config_inst.name, *parts)
@@ -242,3 +247,32 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
 
             if p.returncode != 0:
                 raise RuntimeError("command failed with exit code {}".format(p.returncode))
+
+
+class SetupCMSSWForConfig(CMSSWCommandTask, ConfigTask):
+
+    def cmssw_arch(self) -> str:
+        return self.config_inst.x.cmssw.arch
+
+    def cmssw_parent_dir(self) -> str:
+        cmssw_hash = create_hash((self.cmssw_release(), self.cmssw_arch(), self.cmssw_custom_packages_script()))
+        return os.path.join(os.environ["ETV_SOFTWARE_PATH"], "cmssw", "{}_{}".format(self.cmssw_release(), cmssw_hash))
+
+    def cmssw_release(self) -> str:
+        return self.config_inst.x.cmssw.release
+
+    def cmssw_arch(self) -> str:
+        return self.config_inst.x.cmssw.arch
+
+    def cmssw_custom_packages_script(self) -> Union[str, None]:
+        path = self.config_inst.x.cmssw.get("custom_packages_script", None)
+        if path is not None:
+            path = os.path.expandvars(path)
+        return path
+
+    def output(self):
+        return law.LocalDirectoryTarget(os.path.join(self.cmssw_parent_dir(), self.cmssw_release()))
+
+    def run(self):
+        # trigger setup by requesting to create the sandbox environment
+        self._sandbox.get_env()
