@@ -1,7 +1,7 @@
 from functools import wraps
 import json
 from law.util import DotDict
-from order import Campaign, Config, Dataset, Process, UniqueObjectIndex
+from order import Campaign, Channel, Config, Dataset, Process, UniqueObjectIndex
 import os
 import subprocess
 import threading
@@ -45,7 +45,7 @@ def check_keys(required=None, optional=None):
                 }
                 for k, v in map.items():
                     if not isinstance(v, object_types[k]):
-                        raise ValueError("expected object of type '{}' for element with key '{}'".format(v, k))
+                        raise ValueError("expected object of type '{}' for element with key '{}'".format(object_types[k], k))
 
             return func(*args, **kwargs)
 
@@ -145,9 +145,10 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         if self.has_config(config.name):
             raise ValueError("config '{}' already exists".format(config.name))
 
-        # add processes and datasets to the config
+        # add processes, datasets and channels to the config
         _ = self._create_processes(cfg["processes"], config)
         _ = self._create_datasets(cfg["datasets"], config)
+        _ = self._create_channels(cfg["channels"], config)
 
         return config
 
@@ -190,6 +191,12 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             config.add_dataset(self._create_dataset(cfg_ds, config))
         return config.datasets
 
+    def _create_channels(self, cfg_channels: List[Dict[str, Any]], config: Config) -> UniqueObjectIndex:
+        # create datasets given the information from the loaded configuration and add them to the config object
+        for cfg_ch in cfg_channels:
+            config.add_channel(self._create_channel(cfg_ch, config))
+        return config.channels
+
     @check_keys(
         required={
             ("name", str),
@@ -197,6 +204,7 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         optional={
             ("label", str),
             ("processes", list),
+            ("aux", dict),
         },
     )
     def _create_process(self, cfg_proc: Dict[str, Any], config: Config) -> Process:
@@ -344,3 +352,23 @@ class ConfigManager(metaclass=ConfigManagerMeta):
                 dbs_id = item["dataset"][0]["dataset_id"]
 
         return dbs_id, n_events, n_files
+
+    @check_keys(
+        required={
+            ("name", str),
+        },
+        optional={
+            ("label", str),
+            ("aux", dict),
+        },
+    )
+    def _create_channel(self, cfg_ch: Dict[str, Any], config: Config) -> Channel:
+        # create the channel object
+        channel = Channel(
+            name=cfg_ch["name"],
+            id="+",
+            label=cfg_ch.get("label", None),
+            aux=DotDict.wrap(cfg_ch.get("aux", {})),
+        )
+
+        return channel
