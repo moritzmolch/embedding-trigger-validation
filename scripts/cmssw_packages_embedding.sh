@@ -2,7 +2,7 @@
 
 
 action () {
-    git clone https://github.com/moritzmolch/HLTFilterEfficiencyStudies.git TauAnalysis/HLTFilterEfficiencyStudies
+    git clone https://github.com/moritzmolch/TauTriggerNtuples.git TauAnalysis/TauTriggerNtuples
 }
 
 
