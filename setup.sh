@@ -29,6 +29,16 @@ action () {
     local this_file="$( ${shell_is_zsh} && echo "${(%):-%x}" || echo "${BASH_SOURCE[0]}" )"
     local this_dir="$( cd "$( dirname "${this_file}" )" && pwd )"
 
+    # flags for the state of the environment
+    export ETV_SETUP="${ETV_SETUP:-0}"
+    export ETV_REMOTE="${ETV_REMOTE:-0}"
+
+    # stage out if the setup has already been taking place
+    if [[ "${ETV_SETUP}" = "1" ]]; then
+        echo "project has already been set up"
+        return
+    fi
+
     # base path of this project
     export ETV_BASE_PATH="${this_dir}"
 
@@ -58,8 +68,8 @@ action () {
     export LAW_CONFIG_FILE="${this_dir}/law.cfg"
 
     if which law; then
-    law index --quiet
-    source "$( law completion )" ""
+        law index --quiet
+        source "$( law completion )" ""
     fi
 
 }
