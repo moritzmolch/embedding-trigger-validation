@@ -5,7 +5,8 @@ import os
 from order import Dataset, Process
 from typing import List, Union
 
-from emb_trigger_validation.tasks.base import ConfigTask, CMSSWCommandTask, DatasetTask
+from emb_trigger_validation.tasks.base import ConfigTask, DatasetTask
+from emb_trigger_validation.tasks.cmssw import CMSSWCommandTask
 from emb_trigger_validation.tasks.remote import BaseHTCondorWorkflow
 from emb_trigger_validation.tasks.bundle import BundleCMSSW
 
