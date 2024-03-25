@@ -7,8 +7,8 @@ import os
 import shlex
 from typing import Any, Dict, List, Optional, Union
 
-from emb_trigger_validation.base import BaseTask, ConfigTask
 from emb_trigger_validation.cmssw import CMSSWSandbox
+from emb_trigger_validation.tasks.base import BaseTask, ConfigTask
 
 
 class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
