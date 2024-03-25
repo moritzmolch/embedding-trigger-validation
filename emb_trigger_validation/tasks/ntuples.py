@@ -56,6 +56,19 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow)
             path = os.path.expandvars(path)
         return path
 
+    def get_trigger_names(self):
+        """
+        Concatenate the names of the triggers from all considered channels to one list.
+
+        :returns: list of all trigger names, for which information is collected during the ntuple processing
+        :rtype:   List[str]
+        """
+        return [
+            trigger["name"]
+            for channel in self.config_inst.channels.values()
+            for trigger in channel.x.triggers
+        ]
+
     def output(self):
         return self.local_target(self.branch_data["output_filename"])
 
@@ -70,9 +83,9 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow)
         # translate the dataset type to the corresponding argument of the ntuplizer script
         dataset_type = ""
         if self.dataset_inst.is_data and self.dataset_inst.x.is_emb:
-            dataset_type = "Embedding"
+            dataset_type = "emb"
         elif self.dataset_inst.is_mc:
-            dataset_type = "MC"
+            dataset_type = "mc"
         else:
             raise NotImplementedError("ntuplizer for data not implemented yet")
 
@@ -80,8 +93,13 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, law.LocalWorkflow)
         cmd = [
             "cmsRun",
             "-n", str(self.threads),
-            os.path.join(self.cmssw_parent_dir(), self.cmssw_release(), "src/TauAnalysis/HLTFilterEfficiencyStudies/python/TauTriggerNtuplizer{}_cfg.py".format(dataset_type)),
-            "era={}".format(self.config_inst.campaign.x.era_name),
+            os.path.join(
+                self.cmssw_parent_dir(),
+                self.cmssw_release(),
+                "src/TauAnalysis/TauTriggerNtuples/python/TauTriggerNtuplizer_cfg.py"
+            ),
+            "datasetType={}".format(dataset_type),
+            "hltPaths={}".format(",".join(self.get_trigger_names())),
             "inputFiles={}".format(",".join(self.branch_data["file_uris"])),
             "outputFile=file:ntuple.root",
         ]
