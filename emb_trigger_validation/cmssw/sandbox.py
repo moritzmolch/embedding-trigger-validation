@@ -5,14 +5,16 @@ Sandbox for handling CMSSW environments
 """
 
 import json
-import law
-from law.logger import get_logger
-from law.util import create_hash, readable_popen
-from law.contrib.wlcg import get_vomsproxy_file
-import logging
 import os
 import shlex
 from typing import Dict, List, Optional
+
+from law import Task
+from law.logger import get_logger
+from law.util import create_hash, readable_popen
+from law.contrib.tasks import TransferLocalFile
+from law.contrib.wlcg import get_vomsproxy_file
+
 
 
 logger = get_logger(__name__)
@@ -56,15 +58,17 @@ class CMSSWSandbox():
 
     def __init__(
         self,
-        task: law.Task,
+        task: Task,
         parent_dir: str,
         release: str,
         arch: str,
         custom_packages_script: Optional[str] = None,
         threads: int = 1,
+        bundle_task: Optional[TransferLocalFile] = None,
     ):
-        # task to which this sandbox is connected
+        # tasks to which this sandbox is connected
         self._task = task
+        self._bundle_task = bundle_task
 
         # base attributes of the CMSSW release
         self._parent_dir = parent_dir
@@ -101,6 +105,9 @@ class CMSSWSandbox():
         return cmd_clean
 
     def _build_cmssw_setup_command(self) -> str:
+        # check if we are inside of a remote job
+        is_remote = True if os.environ.get("ETV_REMOTE", "0") == "1" else False
+
         # command for execution inside bash to set up CMSSW
         cmd_cmssw = [
             "source",
@@ -115,10 +122,23 @@ class CMSSWSandbox():
             str(self._threads),
         ]
         if self._custom_packages_script is not None:
-            cmd_cmssw += [
+            cmd_cmssw.extend([
                 "--custom-packages-script",
                 self._custom_packages_script,
-            ]
+            ])
+
+        # add tarball information for remote jobs
+        if is_remote:
+            if not isinstance(self._bundle_task, TransferLocalFile):
+                raise AttributeError("member bundle_task must be subclass of law.contrib.tasks.TransferLocalFile")
+
+            cmd_cmssw.extend([
+                "--remote",
+                "--tarball-uris",
+                self._get_tarball_uris(self._bundle_task),
+                "--tarball-pattern",
+                self._get_tarball_pattern(self._bundle_task),
+            ])
 
         # convert the command list into a properly quoted string
         cmd_cmssw = shlex.join(cmd_cmssw)
@@ -145,7 +165,18 @@ class CMSSWSandbox():
 
         return cmd_env
 
+    def _get_tarball_uris(self, bundle_task: TransferLocalFile) -> List[str]:
+        uris = bundle_task.output().dir.uri(cmd="filecopy", return_all=True)
+        return ",".join(uris)
+    
+    def _get_tarball_pattern(self, bundle_task: TransferLocalFile) -> str:
+        pattern = os.path.basename(bundle_task.get_file_pattern())
+        return pattern
+
     def get_env(self) -> Dict[str, str]:
+        """
+        TODO add documentation
+        """
         # set the path to the environment file
 
         if not os.path.exists(self._env_cache_file):
