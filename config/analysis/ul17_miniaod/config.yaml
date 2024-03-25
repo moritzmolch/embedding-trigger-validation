@@ -214,17 +214,19 @@ channels:
   label: $\\mathrm{{e}}\\tau_{{\\mathrm{{h}}}}$
   aux:
     triggers:
-    - name: Ele32_WPTight_Gsf
-    - name: Ele35_WPTight_Gsf
+    - name: HLT_Ele27_WPTight_Gsf
+    - name: HLT_Ele32_WPTight_Gsf
+    - name: HLT_Ele32_WPTight_Gsf_DoubleL1EG
+    - name: HLT_Ele35_WPTight_Gsf
     - name: HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTau30_eta2p1_CrossL1
 
 - name: mt
   label: $\\mu\\tau_{{\\mathrm{{h}}}}$
   aux:
     triggers:
-    - name: IsoMu24
-    - name: IsoMu27
-    - name: IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
+    - name: HLT_IsoMu24
+    - name: HLT_IsoMu27
+    - name: HLT_IsoMu20_eta2p1_LooseChargedIsoPFTau27_eta2p1_CrossL1
 
 - name: tt
   label: $\\tau_{{\\mathrm{{h}}}}\\tau_{{\\mathrm{{h}}}}$
@@ -233,3 +235,17 @@ channels:
     - name: HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
+
+- name: em
+  label: $\\mathrm{{e}}\\mu$
+  aux:
+    triggers:
+    - name: HLT_IsoMu24
+    - name: HLT_IsoMu27
+    - name: HLT_Ele27_WPTight_Gsf
+    - name: HLT_Ele32_WPTight_Gsf
+    - name: HLT_Ele32_WPTight_Gsf_DoubleL1EG
+    - name: HLT_Ele35_WPTight_Gsf
+    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
+    - name: HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
+    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ
