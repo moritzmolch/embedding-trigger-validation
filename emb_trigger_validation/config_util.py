@@ -202,6 +202,9 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             ("name", str),
         },
         optional={
+            ("color1", list),
+            ("color2", list),
+            ("color3", list),
             ("label", str),
             ("processes", list),
             ("aux", dict),
@@ -212,6 +215,9 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         process = Process(
             name=cfg_proc["name"],
             id="+",
+            color1=cfg_proc.get("color1", None),
+            color2=cfg_proc.get("color2", None),
+            color3=cfg_proc.get("color3", None),
             label=cfg_proc.get("label", None),
         )
 
