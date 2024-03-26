@@ -113,6 +113,7 @@ class CreateCutflowHistograms(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkfl
     def workflow_requires(self):
         reqs = dict(super(CreateCutflowHistograms, self).workflow_requires())
         reqs["ProduceTauTriggerNtuples"] = ProduceTauTriggerNtuples.req(self, branches=self.branches)
+        return reqs
 
     def requires(self):
         reqs = dict(super(CreateCutflowHistograms, self).requires())
