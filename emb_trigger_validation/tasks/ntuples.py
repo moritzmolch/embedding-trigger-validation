@@ -1,7 +1,11 @@
+import awkward as ak
 import law
-from law.util import create_hash
+from law import localize_file_targets
+from law.util import create_hash, human_bytes
 import luigi
+import numpy as np
 import os
+import uproot
 from order import Dataset, Process
 from typing import List, Union
 
@@ -14,12 +18,14 @@ from emb_trigger_validation.tasks.bundle import BundleCMSSW
 class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflow):
 
     threads = luigi.IntParameter(
-        description="number of threads used for executing the cmsRun command; default: 4",
-        default=4,
+        description="number of threads used for executing the cmsRun command; default: 2",
+        default=2,
     )
 
     # hard-code the file group size for now
     file_group_size = 10
+
+    exclude_params_req_get = {"branches", "workflow"}
 
     @classmethod
     def modify_param_values(cls, params):
@@ -33,8 +39,8 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
     def create_branch_map(self):
         # TODO allow flexible base URI, fixed for now
         #base_uri = "root://cms-xrd-global.cern.ch//"
-        #base_uri = "root://xrootd-cms.infn.it//"
-        base_uri = "root://cmsxrootd-kit-disk.gridka.de//"
+        base_uri = "root://xrootd-cms.infn.it//"
+        #base_uri = "root://cmsxrootd-kit-disk.gridka.de//"
 
         # extend the branch map with additional information
         branch_map = DatasetTask.create_branch_map(self)
@@ -173,6 +179,108 @@ class ProduceTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
             self.publish_message("adding dataset '{}' to wrapper".format(dataset.name))
             reqs.append(
                 ProduceTauTriggerNtuples.req(
+                    self,
+                    dataset=dataset.name,
+                )
+            )
+        return reqs
+
+
+class MergeTauTriggerNtuples(DatasetTask):
+
+    def requires(self):
+        reqs = dict(super(MergeTauTriggerNtuples, self).requires())
+        reqs["ProduceTauTriggerNtuples"] = ProduceTauTriggerNtuples.req(self, branches=":")
+        return reqs
+
+    def output(self):
+        return {
+            "events": self.local_target("events__{}.parquet".format(self.dataset_inst.name)),
+            "trigger_table": self.local_target("trigger_table__{}.parquet".format(self.dataset_inst.name)),
+        }
+
+    def run(self):
+        # get the task's inputs and outputs
+        input_ntuples = self.input()["ProduceTauTriggerNtuples"]["collection"]
+        output_events = self.output()["events"]
+        output_trigger_table = self.output()["trigger_table"]
+
+        # ensure that the parent directory of the output targets exist
+        output_events.parent.touch()
+        output_trigger_table.parent.touch()
+
+        # initialize the event and hlt path tables
+        events = None
+        trigger_table = None
+
+        # load the input ntuples
+
+        with law.localize_file_targets(input_ntuples.targets, mode="r") as local_targets:
+
+            n_files = len(local_targets)
+
+            # loop over local targets and invoke progress monitoring
+            for i, (chunk, local_target) in enumerate(local_targets.items()):
+
+                # load the file and concatenate events and trigger tables
+                with self.publish_step(
+                    "[{}/{}] loading file {} (size {} {})".format(
+                        i + 1, n_files, local_target.basename, *human_bytes(local_target.stat().st_size, unit="MB"))
+                ):
+                    with uproot.open(local_target.path) as root_file:
+
+                        # append events of this chunk to the events of the table; set a flag for the input chunk
+                        _events = root_file["tauTriggerNtuplizer/Events"].arrays(library="ak")
+                        _events["input_chunk"] = ak.values_astype((chunk * ak.ones_like(_events["event"])), np.uint32)
+                        if events is None:
+                            events = _events
+                        else:
+                            events = ak.concatenate((events, _events), axis=0)
+
+                        # append trigger table of this chunk to the full trigger tree; set flag for the input chunk
+                        _trigger_table = root_file["tauTriggerNtuplizer/HLT"].arrays(library="ak")
+                        _trigger_table["input_chunk"] = ak.values_astype((chunk * ak.ones_like(_trigger_table["run"])), np.uint32) 
+                        if trigger_table is None:
+                            trigger_table = _trigger_table
+                        else:
+                            trigger_table = ak.concatenate((trigger_table, _trigger_table), axis=0)
+ 
+        # finally dump the arrays to the output files
+        ak.to_parquet(events, output_events.path)
+        ak.to_parquet(trigger_table, output_trigger_table.path)
+
+
+class MergeTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
+
+    root_process = luigi.Parameter(
+        description=(
+            "selection of the root process for processing datasets collectively; only datasets with a process, which "
+            "is a child of the given root process, are taken into account for constructing the requirements of this "
+            "wrapper task"
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(MergeTauTriggerNtuplesWrapper, self).__init__(*args, **kwargs)
+        self.process_inst = self.config_inst.get_process(self.root_process)
+
+    def get_datasets_from_root_process(self, root_process: Process) -> List[Dataset]:
+        datasets = []
+        for dataset in self.config_inst.datasets.values():
+            if len(dataset.processes) == 0:
+                continue
+            dataset_root_process = dataset.processes.get_first().get_root_processes()[0]
+            if dataset_root_process == root_process:
+                datasets.append(dataset)
+        return datasets
+
+    def requires(self):
+        reqs = []
+        self.publish_message("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
+        for dataset in self.get_datasets_from_root_process(self.process_inst):
+            self.publish_message("adding dataset '{}' to wrapper".format(dataset.name))
+            reqs.append(
+                MergeTauTriggerNtuples.req(
                     self,
                     dataset=dataset.name,
                 )
