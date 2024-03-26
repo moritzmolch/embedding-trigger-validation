@@ -186,12 +186,11 @@ class PlotAcceptance(ConfigTask, law.LocalWorkflow):
             hists_and_processes.append((cutflow_hist, process))
 
         # plot acceptance
-        style = mpl.style.rcParams
-        style.update(mplhep.style.CMS)
+        style = mplhep.style.CMS
         style.update({
             "font.size": 18,
             "axes.axisbelow": False,
         })
-        with plt.rc_context(style):
+        with mpl.style.context(style):
             fig, ax_acc, ax_rej = self.plot_acceptance(hists_and_processes, trigger_name, channel)
             output.dump(fig, formatter="mpl")
