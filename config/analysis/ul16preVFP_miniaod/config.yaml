@@ -253,7 +253,7 @@ channels:
     - name: HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau30
 
 - name: mt
-  label: $\\mu\\tau_{{\\mathrm{{h}}}}$
+  label: $\mu\tau_{\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_IsoMu22
@@ -263,14 +263,14 @@ channels:
     - name: HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
 
 - name: tt
-  label: $\\tau_{{\\mathrm{{h}}}}\\tau_{{\\mathrm{{h}}}}$
+  label: $\tau_{\mathrm{h}}\tau_{\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
     - name: HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
 
 #- name: em
-#  label: $\\mathrm{{e}}\\mu$
+#  label: $\mathrm{e}\mu$
 #  aux:
 #    triggers:
 #    - name: HLT_IsoMu22

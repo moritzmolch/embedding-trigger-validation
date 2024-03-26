@@ -18,7 +18,7 @@ processes:
 
 - name: emb
   label: $\mu \to \tau$ embedded
-  color1: [250, 194, 5]  # xkcd:goldenrod
+  color1: [31, 119, 180]  # tab:blue
   processes:
   - name: emb_et
   - name: emb_mt
@@ -27,7 +27,7 @@ processes:
 
 - name: dy_ll
   label: Drell-Yan ($\ell\ell$)
-  color1: [68, 142, 228]  # xkcd:dark sky blue
+  color1: [255, 127, 14]  # tab:orange
   processes:
   - name: dy_ll_m10to50
   - name: dy_ll_m50
@@ -156,7 +156,7 @@ channels:
     - name: HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau30
 
 - name: mt
-  label: $\mu\tau_{\\mathrm{h}}$
+  label: $\mu\tau_{\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_IsoMu22
@@ -166,7 +166,7 @@ channels:
     - name: HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
 
 - name: tt
-  label: $\tau_{\\mathrm{h}}\\tau_{\\mathrm{h}}$
+  label: $\tau_{\mathrm{h}}\tau_{\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
