@@ -14,6 +14,9 @@ from emb_trigger_validation.tasks.cmssw import CMSSWCommandTask
 from emb_trigger_validation.tasks.remote import BaseHTCondorWorkflow
 from emb_trigger_validation.tasks.bundle import BundleCMSSW
 
+# load additional LAW packages
+law.contrib.load("awkward", "root")
+
 
 class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflow):
 
@@ -51,12 +54,15 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
             file_uris = [base_uri + self.dataset_inst.x.lfns[i] for i in file_index]
 
             # generate a unique output filename for a given list of files
-            output_filename = "{}.root".format(create_hash(",".join([os.path.basename(uri) for uri in file_uris])))
+            output_file_hash = create_hash(",".join([os.path.basename(uri) for uri in file_uris]))
+            output_name = "{}.root".format(output_file_hash)
 
             # update the branch map
             branch_map[branch].update({
+                "file_index": file_index,
                 "file_uris": file_uris,
-                "output_filename": output_filename,
+                "hash": output_file_hash,
+                "output_name": output_name,
             })
 
         # return the extended branch map
@@ -100,7 +106,7 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
         ]
 
     def output(self):
-        return self.remote_target(self.branch_data["output_filename"])
+        return self.remote_target(self.branch_data["output_name"])
 
     def run(self):
         output = self.output()
@@ -174,13 +180,14 @@ class ProduceTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
 
     def requires(self):
         reqs = []
-        self.publish_message("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
+        self.logger.info("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
         for dataset in self.get_datasets_from_root_process(self.process_inst):
-            self.publish_message("adding dataset '{}' to wrapper".format(dataset.name))
+            self.logger.info("adding dataset '{}' to wrapper".format(dataset.name))
             reqs.append(
                 ProduceTauTriggerNtuples.req(
                     self,
                     dataset=dataset.name,
+                    branches=":",
                 )
             )
         return reqs
@@ -214,9 +221,8 @@ class MergeTauTriggerNtuples(DatasetTask):
         trigger_table = None
 
         # load the input ntuples
-
-        with law.localize_file_targets(input_ntuples.targets, mode="r") as local_targets:
-
+        with localize_file_targets(input_ntuples.targets, mode="r") as local_targets:
+            # number of files, needed for progress monitoring
             n_files = len(local_targets)
 
             # loop over local targets and invoke progress monitoring
@@ -227,7 +233,7 @@ class MergeTauTriggerNtuples(DatasetTask):
                     "[{}/{}] loading file {} (size {} {})".format(
                         i + 1, n_files, local_target.basename, *human_bytes(local_target.stat().st_size, unit="MB"))
                 ):
-                    with uproot.open(local_target.path) as root_file:
+                    with local_target.load(formatter="uproot", mode="r") as root_file:
 
                         # append events of this chunk to the events of the table; set a flag for the input chunk
                         _events = root_file["tauTriggerNtuplizer/Events"].arrays(library="ak")
@@ -246,8 +252,8 @@ class MergeTauTriggerNtuples(DatasetTask):
                             trigger_table = ak.concatenate((trigger_table, _trigger_table), axis=0)
  
         # finally dump the arrays to the output files
-        ak.to_parquet(events, output_events.path)
-        ak.to_parquet(trigger_table, output_trigger_table.path)
+        output_events.dump(events, formatter="awkward")
+        output_trigger_table.dump(trigger_table, formatter="awkward")
 
 
 class MergeTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
@@ -276,9 +282,9 @@ class MergeTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
 
     def requires(self):
         reqs = []
-        self.publish_message("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
+        self.logger.info("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
         for dataset in self.get_datasets_from_root_process(self.process_inst):
-            self.publish_message("adding dataset '{}' to wrapper".format(dataset.name))
+            self.logger.info("adding dataset '{}' to wrapper".format(dataset.name))
             reqs.append(
                 MergeTauTriggerNtuples.req(
                     self,
