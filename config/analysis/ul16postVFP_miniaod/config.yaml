@@ -17,7 +17,8 @@ campaign:
 processes:
 
 - name: emb
-  label: $\\mu \\to \\tau$ embedded
+  label: $\mu \to \tau$ embedded
+  color1: [250, 194, 5]  # xkcd:goldenrod
   processes:
   - name: emb_et
   - name: emb_mt
@@ -25,7 +26,8 @@ processes:
   - name: emb_em
 
 - name: dy_ll
-  label: Drell-Yan ($\\ell\\ell$)
+  label: Drell-Yan ($\ell\ell$)
+  color1: [68, 142, 228]  # xkcd:dark sky blue
   processes:
   - name: dy_ll_m10to50
   - name: dy_ll_m50
@@ -146,7 +148,7 @@ datasets:
 channels:
 
 - name: et
-  label: $\\mathrm{{e}}\\tau_{{\\mathrm{{h}}}}$
+  label: $\mathrm{e}\tau_{\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_Ele25_eta2p1_WPTight_Gsf
@@ -154,7 +156,7 @@ channels:
     - name: HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau30
 
 - name: mt
-  label: $\\mu\\tau_{{\\mathrm{{h}}}}$
+  label: $\mu\tau_{\\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_IsoMu22
@@ -164,22 +166,22 @@ channels:
     - name: HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
 
 - name: tt
-  label: $\\tau_{{\\mathrm{{h}}}}\\tau_{{\\mathrm{{h}}}}$
+  label: $\tau_{\\mathrm{h}}\\tau_{\\mathrm{h}}$
   aux:
     triggers:
     - name: HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
     - name: HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
 
-- name: em
-  label: $\\mathrm{{e}}\\mu$
-  aux:
-    triggers:
-    - name: HLT_IsoMu22
-    - name: HLT_IsoTkMu22
-    - name: HLT_IsoMu22_eta2p1
-    - name: HLT_IsoTkMu22_eta2p1
-    - name: HLT_Ele25_eta2p1_WPTight_Gsf
-    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL
-    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL
-    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
-    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ
+#- name: em
+#  label: $\mathrm{e}\mu$
+#  aux:
+#    triggers:
+#    - name: HLT_IsoMu22
+#    - name: HLT_IsoTkMu22
+#    - name: HLT_IsoMu22_eta2p1
+#    - name: HLT_IsoTkMu22_eta2p1
+#    - name: HLT_Ele25_eta2p1_WPTight_Gsf
+#    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL
+#    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL
+#    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
+#    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ

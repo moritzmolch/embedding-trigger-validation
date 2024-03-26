@@ -1,0 +1,15 @@
+dbs_id: 3098901
+dbs_instance: prod/phys03
+key: /EmbeddingRun2016_F/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+lfns:
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/1dd7dd97-6618-4a34-adaf-8cf3becde706.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/51a65f45-1d56-4fb5-92c7-230697e587f7.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/6719ed7a-0078-42e6-8dd9-6ee58910e51c.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/6d58710b-5931-41c1-bf38-0119a19a627b.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/7494112d-d0b8-4f21-bf90-be089c229915.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/819c0910-cfb9-4f48-a204-8f96be50e348.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/84fcebc9-d3a6-42ff-ab07-69361f247622.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/ce272fa3-8b9f-4b11-9f5e-71addae1831d.root
+- /store/group/rucio/pog_tau_group/ul_embedding/large_miniAOD_v2/ElTauFinalState/EmbeddingRun2016_F/MINIAOD/inputDoubleMu_106X_ULegacy_miniAOD-v1/0000/d6a42cac-d09e-4873-be5c-de135b444ca4.root
+n_events: 295839
+n_files: 9
