@@ -10,3 +10,6 @@
 [submodule "modules/luigi"]
 	path = modules/luigi
 	url = git@github.com:spotify/luigi.git
+[submodule "modules/cat-order"]
+	path = modules/cat-order
+	url = git@github.com:cms-cat/order
