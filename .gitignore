@@ -164,6 +164,7 @@ cython_debug/
 cache/
 jobs/
 software/
+store/
 
 # VSCode
 .vscode/
