@@ -60,8 +60,8 @@ action () {
     _setup_grid_variables || return "${?}"
 
     # additional dependencies (law, order, scinum)
-    export PYTHONPATH="${ETV_BASE_PATH}:${ETV_MODULES_PATH}/law:${ETV_MODULES_PATH}/order:${ETV_MODULES_PATH}/scinum:${ETV_MODULES_PATH}/luigi:${PYTHONPATH}"
-    export PATH="${ETV_MODULES_PATH}/law/bin:${ETV_MODULES_PATH}/luigi/bin:${PATH}"
+    export PYTHONPATH="${ETV_BASE_PATH}:${ETV_MODULES_PATH}/law:${ETV_MODULES_PATH}/order:${ETV_MODULES_PATH}/scinum:${ETV_MODULES_PATH}/luigi:${ETV_SOFTWARE_PATH}/x86_64-centos7-gcc11-opt/lib/python3.9/site-packages:${PYTHONPATH}"
+    export PATH="${ETV_MODULES_PATH}/law/bin:${ETV_MODULES_PATH}/luigi/bin:${ETV_SOFTWARE_PATH}/x86_64-centos7-gcc11-opt/bin:${PATH}"
 
     # configuration and output paths for law
     export LAW_HOME="${this_dir}/.law"
