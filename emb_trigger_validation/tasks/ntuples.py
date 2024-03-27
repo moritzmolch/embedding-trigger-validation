@@ -36,10 +36,8 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
         return params
 
     def create_branch_map(self):
-        # TODO allow flexible base URI, fixed for now
-        #base_uri = "root://cms-xrd-global.cern.ch//"
-        base_uri = "root://xrootd-cms.infn.it//"
-        #base_uri = "root://cmsxrootd-kit-disk.gridka.de//"
+        # pick the first redirector in the 'redirectors' list
+        base_uri = self.dataset_inst.x.redirectors[0]
 
         # extend the branch map with additional information
         branch_map = DatasetTask.create_branch_map(self)
