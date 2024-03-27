@@ -6,7 +6,7 @@ import luigi
 from order import Config
 import os
 
-from emb_trigger_validation.config_util import ConfigManager
+from emb_trigger_validation.config.config_manager import ConfigManager
 
 
 class BaseTask(law.Task):
