@@ -125,7 +125,7 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
             while True:
                 for line in lines:
                     self.publish_message(line)
-                if not p.poll() is None:
+                if p.poll() is not None:
                     break
 
             if p.returncode != 0:
@@ -133,9 +133,6 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
 
 
 class SetupCMSSWForConfig(CMSSWCommandTask, ConfigTask):
-
-    def cmssw_arch(self) -> str:
-        return self.config_inst.x.cmssw.arch
 
     def cmssw_parent_dir(self) -> str:
         cmssw_hash = create_hash((self.cmssw_release(), self.cmssw_arch(), self.cmssw_custom_packages_script()))

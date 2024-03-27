@@ -5,7 +5,6 @@ from law.util import create_hash, human_bytes
 import luigi
 import numpy as np
 import os
-import uproot
 from order import Dataset, Process
 from typing import List, Union
 
@@ -24,9 +23,6 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
         description="number of threads used for executing the cmsRun command; default: 2",
         default=2,
     )
-
-    # hard-code the file group size for now
-    file_group_size = 10
 
     exclude_params_req_get = {"branches", "workflow"}
 
