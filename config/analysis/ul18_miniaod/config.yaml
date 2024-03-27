@@ -1,0 +1,170 @@
+config:
+  name: ul18_miniaod
+  aux:
+    cmssw:
+      release: CMSSW_10_6_28_patch1
+      arch: slc7_amd64_gcc700
+      custom_packages_script: ${ETV_BASE_PATH}/scripts/cmssw_packages_embedding.sh
+
+
+campaign:
+
+  name: ul18_miniaod
+  aux:
+    era_name: "2018"
+
+
+processes:
+
+- name: emb
+  label: $\mu \\to \tau$ embedded
+  processes:
+  - name: emb_et
+  - name: emb_mt
+  - name: emb_tt
+  - name: emb_em
+
+- name: dy_ll
+  label: Drell-Yan ($\ell\ell$)
+  processes:
+  - name: dy_ll_m10to50
+  - name: dy_ll_m50
+
+
+datasets:
+
+- name: emb_2018A_et
+  process: emb_et
+  key: /EmbeddingRun2018A/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018B_et
+  process: emb_et
+  key: /EmbeddingRun2018B/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018C_et
+  process: emb_et
+  key: /EmbeddingRun2018C/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018D_et
+  process: emb_et
+  key: /EmbeddingRun2018D/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018A_mt
+  process: emb_mt
+  key: /EmbeddingRun2018A/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018B_mt
+  process: emb_mt
+  key: /EmbeddingRun2018B/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018C_mt
+  process: emb_mt
+  key: /EmbeddingRun2018C/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018D_mt
+  process: emb_mt
+  key: /EmbeddingRun2018D/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018A_tt
+  process: emb_tt
+  key: /EmbeddingRun2018A/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018B_tt
+  process: emb_tt
+  key: /EmbeddingRun2018B/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018C_tt
+  process: emb_tt
+  key: /EmbeddingRun2018C/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: emb_2018D_tt
+  process: emb_tt
+  key: /EmbeddingRun2018D/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  is_data: True
+  aux:
+    dbs_instance: prod/phys03
+    is_emb: True
+
+- name: dyjets_ll_m10to50_madgraph
+  process: dy_ll_m10to50
+  key: /DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v1/MINIAODSIM
+  is_data: False
+
+- name: dyjets_ll_m50_madgraph
+  process: dy_ll_m50
+  key: /DYJetsToLL_M-50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+  is_data: False
+
+
+channels:
+
+- name: et
+  label: $\mathrm{e}\tau_{\\mathrm{h}}$
+  aux:
+    triggers:
+    - name: HLT_Ele27_WPTight_Gsf
+    - name: HLT_Ele32_WPTight_Gsf
+    - name: HLT_Ele32_WPTight_Gsf_DoubleL1EG
+    - name: HLT_Ele35_WPTight_Gsf
+    - name: HLT_Ele24_eta2p1_WPTight_Gsf_LooseChargedIsoPFTauHPS30_eta2p1_CrossL1
+
+- name: mt
+  label: $\mu\tau_{\\mathrm{h}}$
+  aux:
+    triggers:
+    - name: HLT_IsoMu24
+    - name: HLT_IsoMu27
+    - name: HLT_IsoMu20_eta2p1_LooseChargedIsoPFTauHPS27_eta2p1_CrossL1
+
+- name: tt
+  label: $\tau_{\\mathrm{h}}\\tau_{\\mathrm{h}}$
+  aux:
+    triggers:
+    - name: HLT_DoubleMediumChargedIsoPFTauHPS35_Trk1_eta2p1_Reg
+    - name: HLT_DoubleTightChargedIsoPFTauHPS35_Trk1_TightID_eta2p1_Reg
+    - name: HLT_DoubleMediumChargedIsoPFTauHPS40_Trk1_TightID_eta2p1_Reg
+    - name: HLT_DoubleTightChargedIsoPFTauHPS40_Trk1_eta2p1_Reg
