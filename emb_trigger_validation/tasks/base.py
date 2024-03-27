@@ -1,16 +1,12 @@
-from abc import ABCMeta, abstractmethod
 from collections import OrderedDict
 import law
 import law.contrib.wlcg
-from law.util import create_hash, iter_chunks, readable_popen
+from law.util import iter_chunks
 import luigi
 from order import Config
 import os
-import shlex
-from typing import Any, Dict, List, Optional, Union
 
 from emb_trigger_validation.config_util import ConfigManager
-from emb_trigger_validation.cmssw import CMSSWSandbox
 
 
 class BaseTask(law.Task):
