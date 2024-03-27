@@ -1,3 +1,9 @@
+# coding: utf-8
+
+"""
+Load YAML configuration and materialize it into configuration objects of classes from the :py:package:`order` package.
+"""
+
 from functools import wraps
 import json
 from law.util import DotDict
@@ -5,8 +11,10 @@ from order import Campaign, Channel, Config, Dataset, Process, UniqueObjectIndex
 import os
 import subprocess
 import threading
-from typing import Any, Dict, Iterable, Mapping, List
+from typing import Any, Dict, Mapping, List
 import yaml
+
+from emb_trigger_validation.config import get_dataset_metadata
 
 
 def check_keys(required=None, optional=None):
@@ -234,6 +242,7 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             ("key", str),
         },
         optional={
+            ("get_dataset_metadata_callable", str),
             ("process", str),
             ("is_data", bool),
             ("aux", dict),
@@ -247,6 +256,13 @@ class ConfigManager(metaclass=ConfigManagerMeta):
                 process = config.get_process(cfg_ds["process"], deep=True)
             except ValueError:
                 raise ValueError("process '{}' not found in config '{}'".format(cfg_ds["process"], config.name))
+
+        # get the function name, which should be used to retrieve the metadata of the dataset
+        # if no function is declared, try to perform a DAS query
+        get_dataset_metadata_callable = getattr(
+            get_dataset_metadata,
+            cfg_ds.get("get_dataset_metadata_callable", get_dataset_metadata.get_dataset_metadata_from_das),
+        )
 
         metadata_file_path = os.path.join(os.path.dirname(config.x.config_path), "datasets", cfg_ds["name"] + ".yaml")
         
@@ -296,68 +312,6 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             dataset.add_process(process)
 
         return dataset
-
-    def _get_das_dataset_lfns(self, key: str, dbs_instance: str) -> Dataset:
-        # execute the DAS query
-        p = subprocess.Popen(
-            [
-                "dasgoclient",
-                "-query",
-                "file dataset={} instance={}".format(key, dbs_instance),
-                "-json",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False,
-            env=os.environ,
-        )
-        out, _ = p.communicate()
-        if p.returncode != 0:
-            raise OSError("dasgoclient: command failed with exit code {}".format(p.returncode))
-
-        # decode and parse the JSON response
-        response = json.loads(out.decode("utf-8"))
-
-        # get the logical filenames from the response
-        lfns = []
-        for item in response:
-            lfns.append(item["file"][0]["name"])
-
-        return lfns
-
-    def _get_das_dataset_metadata(self, key: str, dbs_instance: str) -> Dataset:
-        # execute the DAS query
-        p = subprocess.Popen(
-            [
-                "dasgoclient",
-                "-query",
-                "dataset={} instance={}".format(key, dbs_instance),
-                "-json",
-            ],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=False,
-            env=os.environ,
-        )
-        out, _ = p.communicate()
-        if p.returncode != 0:
-            raise OSError("dasgoclient: command failed with exit code {}".format(p.returncode))
-
-        # decode and parse the JSON response
-        response = json.loads(out.decode("utf-8"))
-
-        # get number of files, number of events and the dataset ID
-        n_files = 0
-        n_events = 0
-        dbs_id = 0
-        for item in response:
-            if "dbs3:filesummaries" in item["das"]["services"]:
-                n_files = item["dataset"][0]["nfiles"]
-                n_events = item["dataset"][0]["nevents"]
-            if "dbs3:dataset_info" in item["das"]["services"]:
-                dbs_id = item["dataset"][0]["dataset_id"]
-
-        return dbs_id, n_events, n_files
 
     @check_keys(
         required={
