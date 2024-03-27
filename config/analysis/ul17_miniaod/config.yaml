@@ -35,120 +35,135 @@ datasets:
 
 - name: emb_2017B_et
   process: emb_et
-  key: /EmbeddingRun2017B/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017B_ElTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017C_et
   process: emb_et
-  key: /EmbeddingRun2017C/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017C_ElTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017D_et
   process: emb_et
-  key: /EmbeddingRun2017D/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017D_ElTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017E_et
   process: emb_et
-  key: /EmbeddingRun2017E/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017E_ElTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017F_et
   process: emb_et
-  key: /EmbeddingRun2017F/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017F_ElTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017B_mt
   process: emb_mt
-  key: /EmbeddingRun2017B/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017B_MuTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017C_mt
   process: emb_mt
-  key: /EmbeddingRun2017C/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017C_MuTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017D_mt
   process: emb_mt
-  key: /EmbeddingRun2017D/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017D_MuTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017E_mt
   process: emb_mt
-  key: /EmbeddingRun2017E/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017E_MuTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017F_mt
   process: emb_mt
-  key: /EmbeddingRun2017F/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017F_MuTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017B_tt
   process: emb_tt
-  key: /EmbeddingRun2017B/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017B_TauTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017C_tt
   process: emb_tt
-  key: /EmbeddingRun2017C/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017C_TauTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017D_tt
   process: emb_tt
-  key: /EmbeddingRun2017D/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017D_TauTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017E_tt
   process: emb_tt
-  key: /EmbeddingRun2017E/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017E_TauTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
 
 - name: emb_2017F_tt
   process: emb_tt
-  key: /EmbeddingRun2017F/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+  key: dbs/ul_embedding_rerun_puppi/Run2017F_TauTau.dbs
   is_data: True
+  get_dataset_metadata_callable: get_dataset_metadata_from_gc_configs
   aux:
     dbs_instance: prod/phys03
     is_emb: True
@@ -192,6 +207,7 @@ channels:
   label: $\\tau_{{\\mathrm{{h}}}}\\tau_{{\\mathrm{{h}}}}$
   aux:
     triggers:
+    - name: HLT_DoubleMediumChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
