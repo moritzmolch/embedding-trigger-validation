@@ -15,16 +15,14 @@ import subprocess
 import yaml
 
 
-def get_dataset_metadata_from_yaml(dataset: Dataset, config: Config) -> Dict[str, Any]:
+def get_dataset_metadata_from_yaml(dataset: Dataset) -> Dict[str, Any]:
     """
     Retrieve the metadata of a dataset from a YAML file.
 
     This function is mainly used for loading metadata which has been downloaded once again.
 
-    The parameter `dataset` is a configuration object, which is identified by its member `name`.
-    
-    The parameter `config` is the main configuration object. There, the auxiliary data must contain an entry
-    `config_path` in order to determine the location of the cached files.
+    The parameter `dataset` is a configuration object. The auxiliary data of this object has to contain an entry
+    `metadata_path`, which points to the location of the existing YAML file with the metadata.
 
     This function can also be used to provide metadata for custom datasets. The YAML file then has to be prepared
     beforehand.
@@ -44,20 +42,19 @@ def get_dataset_metadata_from_yaml(dataset: Dataset, config: Config) -> Dict[str
     :param dataset: configuration object of the dataset
     :type dataset: Dataset
 
-    :param config: main configuration object of the production campaign (e.g. the data-taking era)
-    :type config: Config
-
     :return: pulled metadata information for the dataset
     :rtype:  Dict[str, Any]
     """
 
-    # construct the YAML file path and check if it is present
-    dataset_file_path = os.path.join(config.x.config_path, "datasets", "{}.yaml".format(dataset.name))
-    if not os.path.exists(dataset_file_path):
-        raise FileNotFoundError("file {} not found".format(dataset_file_path))
+    # get the metadata file path and check if it is present
+    if not dataset.has_aux("metadata_path"):
+        raise ValueError("dataset '{}' does not provide a value for 'metadata_path' in the member 'aux'".format(dataset.name))
+
+    if not os.path.exists(dataset.x.metadata_path):
+        raise FileNotFoundError("file {} not found".format(dataset.x.metadata_path))
     
     # load the file content
-    with open(dataset_file_path, mode="r") as f:
+    with open(dataset.x.metadata_path, mode="r") as f:
         metadata = yaml.safe_load(f)
 
     return metadata

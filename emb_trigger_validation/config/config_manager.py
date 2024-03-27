@@ -5,11 +5,9 @@ Load YAML configuration and materialize it into configuration objects of classes
 """
 
 from functools import wraps
-import json
 from law.util import DotDict
 from order import Campaign, Channel, Config, Dataset, Process, UniqueObjectIndex
 import os
-import subprocess
 import threading
 from typing import Any, Dict, Mapping, List
 import yaml
@@ -261,55 +259,44 @@ class ConfigManager(metaclass=ConfigManagerMeta):
         # if no function is declared, try to perform a DAS query
         get_dataset_metadata_callable = getattr(
             get_dataset_metadata,
-            cfg_ds.get("get_dataset_metadata_callable", get_dataset_metadata.get_dataset_metadata_from_das),
+            cfg_ds.pop("get_dataset_metadata_callable", get_dataset_metadata.get_dataset_metadata_from_das),
         )
 
-        metadata_file_path = os.path.join(os.path.dirname(config.x.config_path), "datasets", cfg_ds["name"] + ".yaml")
-        
-        if not os.path.exists(os.path.dirname(metadata_file_path)):
-            os.makedirs(os.path.dirname(metadata_file_path))
-
-        metadata = {}
-        if not os.path.exists(metadata_file_path):
-            # get key and DBS instance of the dataset to perform DAS queries
-            metadata["key"] = cfg_ds["key"]
-            metadata["dbs_instance"] = cfg_ds.setdefault("aux", {}).get("dbs_instance", "prod/global")
-
-            # get the logical file names of the dataset
-            metadata["lfns"] = self._get_das_dataset_lfns(metadata["key"], metadata["dbs_instance"])
-
-            # get additional metadata
-            metadata["dbs_id"], metadata["n_events"], metadata["n_files"] = self._get_das_dataset_metadata(metadata["key"], metadata["dbs_instance"])
-
-            with open(metadata_file_path, mode="w") as f:
-                yaml.safe_dump(metadata, f)
-
-        else:
-            with open(metadata_file_path, mode="r") as f:
-                metadata = yaml.safe_load(f)
-
-        # construct the dictionary with auxiliary information
-        aux_dict = cfg_ds.get("aux", {})
-        aux_dict.update({
-            "dbs_instance": metadata["dbs_instance"],
-            "dbs_id": metadata["dbs_id"],
-            "lfns": metadata["lfns"],
-        })
-
-        # create the dataset object
-        dataset = Dataset(
+        # create the prototype dataset object
+        dataset_prototype = Dataset(
             name=cfg_ds["name"],
             id="+",
-            keys=[metadata["key"]],
-            n_events=metadata["n_events"],
-            n_files=metadata["n_files"],
+            processes=[process],
+            keys=[cfg_ds["key"]],
+            n_events=0,
+            n_files=0,
             is_data=cfg_ds.get("is_data", None),
-            aux=DotDict.wrap(aux_dict),
+            aux=DotDict.wrap(cfg_ds["aux"]),
         )
 
-        # add the process if it has been specified
-        if process is not None:
-            dataset.add_process(process)
+        # add the path to the metadata cache file to the auxiliary data
+        dataset_prototype.x.metadata_path = os.path.join(config.x.config_path, "datasets", "{}.yaml".format(dataset_prototype.name))
+
+        # retrieve the metadata
+        metadata = {}
+        try:
+            # first, try to get the cached metadata file
+            metadata = get_dataset_metadata.get_dataset_metadata_from_yaml(dataset_prototype.name)
+
+        except FileNotFoundError as _:
+            # if the file is not found, try out to get the metadata with the declared function and dump it to a YAML file
+            metadata = get_dataset_metadata_callable(dataset_prototype.name)
+            with open(dataset_prototype.x.metadata_path, mode="w") as f:
+                yaml.safe_dump(metadata, f)
+
+        except Exception as e:
+            # other exceptions than `FileNotFoundError` must be raised
+            raise e
+
+        # create a copy of the dataset, that also contains the pulled metadata values
+        n_events, n_files = metadata.pop("n_events"), metadata.pop("n_files")
+        dataset = dataset_prototype.copy(n_events=n_events, n_files=n_files)
+        dataset.x.update(metadata)
 
         return dataset
 
