@@ -257,36 +257,43 @@ class ConfigManager(metaclass=ConfigManagerMeta):
 
         # get the function name, which should be used to retrieve the metadata of the dataset
         # if no function is declared, try to perform a DAS query
-        get_dataset_metadata_callable = getattr(
-            get_dataset_metadata,
-            cfg_ds.pop("get_dataset_metadata_callable", get_dataset_metadata.get_dataset_metadata_from_das),
-        )
+        get_dataset_metadata_callable = None
+        get_dataset_metadata_callable_name = cfg_ds.pop("get_dataset_metadata_callable", None)
+        if get_dataset_metadata_callable_name is None:
+            get_dataset_metadata_callable = get_dataset_metadata.get_dataset_metadata_from_das
+        else:
+            get_dataset_metadata_callable = getattr(
+                get_dataset_metadata,
+                get_dataset_metadata_callable_name,
+            )
 
         # create the prototype dataset object
-        dataset_prototype = Dataset(
+        dataset = Dataset(
             name=cfg_ds["name"],
             id="+",
             processes=[process],
             keys=[cfg_ds["key"]],
-            n_events=0,
-            n_files=0,
-            is_data=cfg_ds.get("is_data", None),
-            aux=DotDict.wrap(cfg_ds["aux"]),
+            aux=DotDict.wrap(cfg_ds.get("aux", {})),
         )
 
         # add the path to the metadata cache file to the auxiliary data
-        dataset_prototype.x.metadata_path = os.path.join(config.x.config_path, "datasets", "{}.yaml".format(dataset_prototype.name))
+        dataset.x.metadata_path = os.path.join(os.path.dirname(config.x.config_path), "datasets", "{}.yaml".format(dataset.name))
 
         # retrieve the metadata
         metadata = {}
         try:
             # first, try to get the cached metadata file
-            metadata = get_dataset_metadata.get_dataset_metadata_from_yaml(dataset_prototype.name)
+            metadata = get_dataset_metadata.get_dataset_metadata_from_yaml(dataset)
 
         except FileNotFoundError as _:
             # if the file is not found, try out to get the metadata with the declared function and dump it to a YAML file
-            metadata = get_dataset_metadata_callable(dataset_prototype.name)
-            with open(dataset_prototype.x.metadata_path, mode="w") as f:
+            metadata = get_dataset_metadata_callable(dataset)
+
+            # ensure that the parent directory exists
+            parent_dir = os.path.dirname(dataset.x.metadata_path)
+            if not os.path.exists(parent_dir):
+                os.makedirs(parent_dir)
+            with open(dataset.x.metadata_path, mode="w") as f:
                 yaml.safe_dump(metadata, f)
 
         except Exception as e:
@@ -294,9 +301,9 @@ class ConfigManager(metaclass=ConfigManagerMeta):
             raise e
 
         # create a copy of the dataset, that also contains the pulled metadata values
-        n_events, n_files = metadata.pop("n_events"), metadata.pop("n_files")
-        dataset = dataset_prototype.copy(n_events=n_events, n_files=n_files)
-        dataset.x.update(metadata)
+        dataset.n_events = metadata.pop("n_events")
+        dataset.n_files = metadata.pop("n_files")
+        dataset.aux.update(metadata)
 
         return dataset
 
