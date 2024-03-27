@@ -60,7 +60,7 @@ def get_dataset_metadata_from_yaml(dataset: Dataset) -> Dict[str, Any]:
     return metadata
 
 
-def get_dataset_metadata_from_das(dataset: Dataset, config: Config) -> Dict[str, Any]:
+def get_dataset_metadata_from_das(dataset: Dataset) -> Dict[str, Any]:
     """
     Retrieve the metadata of a dataset, which is registered at the CMS Data Aggregation System (DAS).
 
@@ -105,7 +105,7 @@ def get_dataset_metadata_from_das(dataset: Dataset, config: Config) -> Dict[str,
     key = dataset.keys[0]
 
     # get the DBS instance; if no value is set in the 'auxiliary data member of the dataset, 'prod/global' is selected
-    dbs_instance = dataset.x.get_aux("dbs_instance", "prod/global")
+    dbs_instance = dataset.get_aux("dbs_instance", "prod/global")
 
     # execute the DAS query
     p = subprocess.Popen(
@@ -157,8 +157,8 @@ def get_dataset_metadata_from_das(dataset: Dataset, config: Config) -> Dict[str,
     n_events = 0
     for item in response:
         if "dbs3:filesummaries" in item["das"]["services"]:
-            n_files = item["dataset"][0]["nfiles"]
-            n_events = item["dataset"][0]["nevents"]
+            n_files = int(item["dataset"][0]["nfiles"])
+            n_events = int(item["dataset"][0]["nevents"])
 
     # also add the possible redirectors for this dataset, ordered by their priority
     redirectors = [
@@ -174,7 +174,7 @@ def get_dataset_metadata_from_das(dataset: Dataset, config: Config) -> Dict[str,
     }
 
 
-def get_dataset_metadata_from_gc_configs(dataset: Dataset, config: Config):
+def get_dataset_metadata_from_gc_configs(dataset: Dataset) -> Dict[str, Any]:
     """
     Custom function to retrieve dataset metadata for embedding samples from files in the repository
     https://github.com/KIT-CMS/gc_configs_for_embedding.
@@ -213,7 +213,7 @@ def get_dataset_metadata_from_gc_configs(dataset: Dataset, config: Config):
     :rtype:  Dict[str, Any]
     """
     # if this is dataset not embedding, raise an exception
-    if not dataset.x.get_aux("is_emb", False):
+    if not dataset.get_aux("is_emb", False):
         raise ValueError("get_dataset_metadata_from_gc_configs is only useable for embedding samples")
 
     # check if a key is provided
@@ -225,7 +225,7 @@ def get_dataset_metadata_from_gc_configs(dataset: Dataset, config: Config):
 
     # clone the repository in a temporary directory
     with tempfile.TemporaryDirectory() as tmpdir:
-        gc_configs_path = os.path.join(tmpdir, "gc_configs_for_embedding"),
+        gc_configs_path = os.path.join(tmpdir, "gc_configs_for_embedding")
         p = subprocess.Popen(
             [
                 "git",
@@ -271,7 +271,7 @@ def _read_metadata_from_dbs_filelist(dbs_filelist_path: str) -> Dict[str, Any]:
             lfns.append(os.path.join(lfn_base, key))
 
     # get the number of events and the number of files
-    n_events = parser.get(section, "events")
+    n_events = int(parser.get(section, "events"))
     n_files = len(lfns)
 
     # fix the redirector to GridKA as this is a private production
