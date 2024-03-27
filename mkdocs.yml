@@ -1,0 +1,21 @@
+site_name: Embedding Trigger Validation
+
+plugins:
+- mkdocstrings
+
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: True
+  - md_in_html
+  
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
+
+theme:
+  name: material
+
+nav:
+- tau-triggers-2016.md
+- tau-triggers-2017.md
