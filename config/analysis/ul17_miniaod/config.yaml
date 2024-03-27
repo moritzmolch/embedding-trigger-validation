@@ -153,46 +153,6 @@ datasets:
     dbs_instance: prod/phys03
     is_emb: True
 
-- name: emb_2017B_em
-  process: emb_em
-  key: /EmbeddingRun2017B/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
-- name: emb_2017C_em
-  process: emb_em
-  key: /EmbeddingRun2017C/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
-- name: emb_2017D_em
-  process: emb_em
-  key: /EmbeddingRun2017D/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
-- name: emb_2017E_em
-  process: emb_em
-  key: /EmbeddingRun2017E/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
-- name: emb_2017F_em
-  process: emb_em
-  key: /EmbeddingRun2017F/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
 - name: dy_ll_m10to50_madgraph
   process: dy_ll_m10to50
   key: /DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL17MiniAODv2-106X_mc2017_realistic_v9-v1/MINIAODSIM
@@ -235,17 +195,3 @@ channels:
     - name: HLT_DoubleTightChargedIsoPFTau35_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleMediumChargedIsoPFTau40_Trk1_TightID_eta2p1_Reg
     - name: HLT_DoubleTightChargedIsoPFTau40_Trk1_eta2p1_Reg
-
-- name: em
-  label: $\\mathrm{{e}}\\mu$
-  aux:
-    triggers:
-    - name: HLT_IsoMu24
-    - name: HLT_IsoMu27
-    - name: HLT_Ele27_WPTight_Gsf
-    - name: HLT_Ele32_WPTight_Gsf
-    - name: HLT_Ele32_WPTight_Gsf_DoubleL1EG
-    - name: HLT_Ele35_WPTight_Gsf
-    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
-    - name: HLT_Mu12_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
-    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ

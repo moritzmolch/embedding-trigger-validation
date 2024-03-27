@@ -107,29 +107,6 @@ datasets:
     dbs_instance: prod/phys03
     is_emb: True
 
-- name: emb_2016F_em
-  process: emb_em
-  key: /EmbeddingRun2016_F/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
-- name: emb_2016G_em
-  process: emb_em
-  key: /EmbeddingRun2016_G/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-- name: emb_2016H_em
-  process: emb_em
-  key: /EmbeddingRun2016_H/ElMuFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
-  is_data: True
-  aux:
-    dbs_instance: prod/phys03
-    is_emb: True
-
 #- name: dy_ll_m10to50_madgraph
 #  process: dy_ll_m10to50
 #  key: /DYJetsToLL_M-10to50_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL16MiniAODv2-106X_mcRun2_asymptotic_v17-v1/MINIAODSIM
@@ -171,17 +148,3 @@ channels:
     triggers:
     - name: HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
     - name: HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg
-
-#- name: em
-#  label: $\mathrm{e}\mu$
-#  aux:
-#    triggers:
-#    - name: HLT_IsoMu22
-#    - name: HLT_IsoTkMu22
-#    - name: HLT_IsoMu22_eta2p1
-#    - name: HLT_IsoTkMu22_eta2p1
-#    - name: HLT_Ele25_eta2p1_WPTight_Gsf
-#    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL
-#    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL
-#    - name: HLT_Mu8_TrkIsoVVL_Ele23_CaloIdL_TrackIdL_IsoVL_DZ
-#    - name: HLT_Mu23_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_DZ
