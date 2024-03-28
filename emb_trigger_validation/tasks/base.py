@@ -3,7 +3,7 @@ import law
 import law.contrib.wlcg
 from law.util import iter_chunks
 import luigi
-from order import Config
+from order import Config, Dataset, Process, UniqueObjectIndex
 import os
 
 from emb_trigger_validation.config.config_manager import ConfigManager
@@ -122,3 +122,34 @@ class DatasetTask(ConfigTask):
 
     def path(self, store, *parts, **kwargs) -> str:
         return os.path.join(store, self.version, self.__class__.__name__, self.config_inst.name, self.dataset_inst.name, *parts)
+
+
+class RootProcessesTask(ConfigTask):
+
+    root_processes = law.CSVParameter(
+        description=(
+            "selection of the root processes for processing datasets collectively; only datasets with a process which "
+            "is a child of a given root process are taken into account for triggering dependencies"
+        ),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(RootProcessesTask, self).__init__(*args, **kwargs)
+        self.process_insts = UniqueObjectIndex(
+            Process,
+            [
+                self.config_inst.get_process(process)
+                for process in self.root_processes
+            ],
+        )
+
+    def get_datasets_from_root_processes(self) -> UniqueObjectIndex:
+        datasets = []
+        for process in self.process_insts.values():
+            for dataset in self.config_inst.datasets.values():
+                if len(dataset.processes) == 0:
+                    continue
+                dataset_root_process = dataset.processes.get_first().get_root_processes()[0]
+                if dataset_root_process == process:
+                    datasets.append(dataset)
+        return UniqueObjectIndex(Dataset, datasets)

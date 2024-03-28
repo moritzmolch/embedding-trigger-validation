@@ -10,7 +10,7 @@ import re
 from typing import List
 import vector
 
-from emb_trigger_validation.tasks.base import ConfigTask, DatasetTask
+from emb_trigger_validation.tasks.base import ConfigTask, DatasetTask, RootProcessesTask
 from emb_trigger_validation.tasks.ntuples import ProduceTauTriggerNtuples
 from emb_trigger_validation.tasks.remote import BaseHTCondorWorkflow
 
@@ -306,35 +306,11 @@ class MergeCutflowHistograms(DatasetTask):
         output.dump(cutflow, formatter="pickle")
 
 
-class MergeCutflowHistogramsWrapper(ConfigTask, law.WrapperTask):
-
-    root_process = luigi.Parameter(
-        description=(
-            "selection of the root process for processing datasets collectively; only datasets with a process, which "
-            "is a child of the given root process, are taken into account for constructing the requirements of this "
-            "wrapper task"
-        ),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(MergeCutflowHistogramsWrapper, self).__init__(*args, **kwargs)
-        self.process_inst = self.config_inst.get_process(self.root_process)
-
-    def get_datasets_from_root_process(self, root_process: Process) -> List[Dataset]:
-        datasets = []
-        for dataset in self.config_inst.datasets.values():
-            if len(dataset.processes) == 0:
-                continue
-            dataset_root_process = dataset.processes.get_first().get_root_processes()[0]
-            if dataset_root_process == root_process:
-                datasets.append(dataset)
-        return datasets
+class MergeCutflowHistogramsWrapper(RootProcessesTask, law.WrapperTask):
 
     def requires(self):
         reqs = []
-        self.logger.info("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
-        for dataset in self.get_datasets_from_root_process(self.process_inst):
-            self.logger.info("adding dataset '{}' to wrapper".format(dataset.name))
+        for dataset in self.get_datasets_from_root_processes().values():
             reqs.append(
                 MergeCutflowHistograms.req(
                     self,

@@ -8,7 +8,7 @@ import os
 from order import Dataset, Process
 from typing import List, Union
 
-from emb_trigger_validation.tasks.base import ConfigTask, DatasetTask
+from emb_trigger_validation.tasks.base import ConfigTask, DatasetTask, RootProcessesTask
 from emb_trigger_validation.tasks.cmssw import CMSSWCommandTask
 from emb_trigger_validation.tasks.remote import BaseHTCondorWorkflow
 from emb_trigger_validation.tasks.bundle import BundleCMSSW
@@ -23,6 +23,9 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
         description="number of threads used for executing the cmsRun command; default: 2",
         default=2,
     )
+
+    # TODO set this in a configuration file
+    file_group_size = 10
 
     exclude_params_req_get = {"branches", "workflow"}
 
@@ -143,146 +146,22 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
         output.copy_from_local(tmp_ntuple_target)
 
 
-class ProduceTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
+class ProduceTauTriggerNtuplesWrapper(RootProcessesTask, law.WrapperTask):
 
     threads = luigi.IntParameter(
         description="number of threads used for executing the cmsRun command; default: 1",
         default=1,
     )
 
-    root_process = luigi.Parameter(
-        description=(
-            "selection of the root process for processing datasets collectively; only datasets with a process, which "
-            "is a child of the given root process, are taken into account for constructing the requirements of this "
-            "wrapper task"
-        ),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(ProduceTauTriggerNtuplesWrapper, self).__init__(*args, **kwargs)
-        self.process_inst = self.config_inst.get_process(self.root_process)
-
-    def get_datasets_from_root_process(self, root_process: Process) -> List[Dataset]:
-        datasets = []
-        for dataset in self.config_inst.datasets.values():
-            if len(dataset.processes) == 0:
-                continue
-            dataset_root_process = dataset.processes.get_first().get_root_processes()[0]
-            if dataset_root_process == root_process:
-                datasets.append(dataset)
-        return datasets
-
     def requires(self):
         reqs = []
-        self.logger.info("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
-        for dataset in self.get_datasets_from_root_process(self.process_inst):
-            self.logger.info("adding dataset '{}' to wrapper".format(dataset.name))
+        for dataset in self.get_datasets_from_root_processes().values():
+            self.logger.info("adding dataset '{}' to wrapper '{}'".format(dataset.name, self.__class__.__name__))
             reqs.append(
                 ProduceTauTriggerNtuples.req(
                     self,
                     dataset=dataset.name,
                     branches=":",
-                )
-            )
-        return reqs
-
-
-class MergeTauTriggerNtuples(DatasetTask):
-
-    def requires(self):
-        reqs = dict(super(MergeTauTriggerNtuples, self).requires())
-        reqs["ProduceTauTriggerNtuples"] = ProduceTauTriggerNtuples.req(self, branches=":")
-        return reqs
-
-    def output(self):
-        return {
-            "events": self.local_target("events__{}.parquet".format(self.dataset_inst.name)),
-            "trigger_table": self.local_target("trigger_table__{}.parquet".format(self.dataset_inst.name)),
-        }
-
-    def run(self):
-        # get the task's inputs and outputs
-        input_ntuples = self.input()["ProduceTauTriggerNtuples"]["collection"]
-        output_events = self.output()["events"]
-        output_trigger_table = self.output()["trigger_table"]
-
-        # ensure that the parent directory of the output targets exist
-        output_events.parent.touch()
-        output_trigger_table.parent.touch()
-
-        # initialize the event and hlt path tables
-        events = None
-        trigger_table = None
-
-        # load the input ntuples
-        with localize_file_targets(input_ntuples.targets, mode="r") as local_targets:
-            # number of files, needed for progress monitoring
-            n_files = len(local_targets)
-
-            # loop over local targets and invoke progress monitoring
-            for i, (chunk, local_target) in enumerate(local_targets.items()):
-
-                # load the file and concatenate events and trigger tables
-                with self.publish_step(
-                    "[{}/{}] loading file {} (size {} {})".format(
-                        i + 1, n_files, local_target.basename, *human_bytes(local_target.stat().st_size, unit="MB"))
-                ):
-                    with local_target.load(formatter="uproot", mode="r") as root_file:
-
-                        # append events of this chunk to the events of the table; set a flag for the input chunk
-                        _events = root_file["tauTriggerNtuplizer/Events"].arrays(library="ak")
-                        _events["input_chunk"] = ak.values_astype((chunk * ak.ones_like(_events["event"])), np.uint32)
-                        if events is None:
-                            events = _events
-                        else:
-                            events = ak.concatenate((events, _events), axis=0)
-
-                        # append trigger table of this chunk to the full trigger tree; set flag for the input chunk
-                        _trigger_table = root_file["tauTriggerNtuplizer/HLT"].arrays(library="ak")
-                        _trigger_table["input_chunk"] = ak.values_astype((chunk * ak.ones_like(_trigger_table["run"])), np.uint32) 
-                        if trigger_table is None:
-                            trigger_table = _trigger_table
-                        else:
-                            trigger_table = ak.concatenate((trigger_table, _trigger_table), axis=0)
- 
-        # finally dump the arrays to the output files
-        output_events.dump(events, formatter="awkward")
-        output_trigger_table.dump(trigger_table, formatter="awkward")
-
-
-class MergeTauTriggerNtuplesWrapper(ConfigTask, law.WrapperTask):
-
-    root_process = luigi.Parameter(
-        description=(
-            "selection of the root process for processing datasets collectively; only datasets with a process, which "
-            "is a child of the given root process, are taken into account for constructing the requirements of this "
-            "wrapper task"
-        ),
-    )
-
-    def __init__(self, *args, **kwargs):
-        super(MergeTauTriggerNtuplesWrapper, self).__init__(*args, **kwargs)
-        self.process_inst = self.config_inst.get_process(self.root_process)
-
-    def get_datasets_from_root_process(self, root_process: Process) -> List[Dataset]:
-        datasets = []
-        for dataset in self.config_inst.datasets.values():
-            if len(dataset.processes) == 0:
-                continue
-            dataset_root_process = dataset.processes.get_first().get_root_processes()[0]
-            if dataset_root_process == root_process:
-                datasets.append(dataset)
-        return datasets
-
-    def requires(self):
-        reqs = []
-        self.logger.info("wrapping tasks for datasets associated with the root process '{}'".format(self.process_inst.name))
-        for dataset in self.get_datasets_from_root_process(self.process_inst):
-            self.logger.info("adding dataset '{}' to wrapper".format(dataset.name))
-            reqs.append(
-                MergeTauTriggerNtuples.req(
-                    self,
-                    dataset=dataset.name,
                 )
             )
         return reqs
