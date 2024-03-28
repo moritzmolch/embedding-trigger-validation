@@ -1,5 +1,6 @@
 import hist
 import law
+import luigi
 import numpy as np
 import matplotlib as mpl
 import matplotlib.gridspec as gs
@@ -9,22 +10,40 @@ from order import Channel, Process, UniqueObjectIndex
 import re
 from typing import Iterable, Tuple
 
-from emb_trigger_validation.tasks.base import ConfigTask
+from emb_trigger_validation.tasks.base import RootProcessesTask
 from emb_trigger_validation.tasks.histograms import MergeCutflowHistogramsWrapper
 
 # load additional packages
 law.contrib.load("matplotlib", "root")
 
 
-class PlotAcceptance(ConfigTask, law.LocalWorkflow):
+class PlotAcceptance(RootProcessesTask, law.LocalWorkflow):
 
-    root_processes = law.CSVParameter(
+
+    prefix = luigi.Parameter(
         description=(
-            "root processes considered for creating the acceptance histograms; only datasets with a process, which "
-            "is a child of the given process, are taken into account for constructing the requirements of this "
-            "wrapper task"
+            "tag, which is prepended to the names of all generated output files; optional"
         ),
+        default=law.NO_STR,
     )
+
+    postfix = luigi.Parameter(
+        description=(
+            "tag, which is appended to the names of all generated output files just in front of the file extension; "
+            "optional"
+        ),
+        default=law.NO_STR,
+    )
+
+    extension = luigi.Parameter(
+        description=(
+            "file extension of the generated output files, e.g. '.png', '.pdf', '.svg'; all file formats that "
+            "matplotlib is capable to handle may be used here; default: 'pdf'"
+        ),
+        default="pdf",
+    )
+
+
 
     exclude_params_req = {"branch", "branches"}
 
@@ -66,12 +85,18 @@ class PlotAcceptance(ConfigTask, law.LocalWorkflow):
         return reqs
 
     def output(self):
+        prefix = "__{}".format(self.prefix) if self.prefix != law.NO_STR else ""
+        postfix = "__{}".format(self.postfix) if self.postfix != law.NO_STR else ""
+        extension = self.extension
         process_string = "_".join(self.process_insts.names())
         return self.local_target(
-            "plot_cutflow_acceptance__{}__{}__{}.pdf".format(
+            "plot_cutflow_acceptance{}__{}__{}__{}{}.{}".format(
+                prefix,
                 process_string,
                 self.branch_data["channel"].name,
                 self.branch_data["trigger"]["name"],
+                postfix,
+                extension,
             )
         )
 
