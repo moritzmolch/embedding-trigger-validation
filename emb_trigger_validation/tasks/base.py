@@ -4,7 +4,9 @@ import law.contrib.wlcg
 from law.util import iter_chunks
 import luigi
 from order import Config, Dataset, Process, UniqueObjectIndex
+from order.util import make_list
 import os
+from typing import List, Union
 
 from emb_trigger_validation.config.config_manager import ConfigManager
 
@@ -80,11 +82,14 @@ class ConfigTask(BaseTask):
 
     def __init__(self, *args, **kwargs):
         super(ConfigTask, self).__init__(*args, **kwargs)
-        self.config_inst = self.get_config(self.config)
+        self._config = self.get_config(self.config)
 
     @staticmethod
     def get_config(name: str) -> Config:
         return ConfigManager().load_config(os.path.join(os.environ["ETV_CONFIG_PATH"], "analysis", name, "config.yaml"))
+
+    def config(self):
+        return self._config
 
     def path(self, store, *parts, **kwargs) -> str:
         return os.path.join(store, self.version, self.__class__.__name__, self.config_inst.name, *parts)
@@ -109,9 +114,12 @@ class DatasetTask(ConfigTask):
 
     def __init__(self, *args, **kwargs):
         super(DatasetTask, self).__init__(*args, **kwargs)
-        self.dataset_inst = self.config_inst.get_dataset(self.dataset)
+        self._dataset = self.config().get_dataset(self.dataset)
 
-    def create_branch_map(self):
+    def dataset(self) -> Dataset:
+        return self._dataset
+
+    def create_branch_map(self) -> Dict[int, Any]:
         file_index_chunks = iter_chunks(range(self.dataset_inst.n_files), size=self.file_group_size)
         return OrderedDict({
             i: {
@@ -124,18 +132,18 @@ class DatasetTask(ConfigTask):
         return os.path.join(store, self.version, self.__class__.__name__, self.config_inst.name, self.dataset_inst.name, *parts)
 
 
-class RootProcessesTask(ConfigTask):
+class ProcessCollectionTask(ConfigTask):
 
-    root_processes = law.CSVParameter(
+    processes = law.CSVParameter(
         description=(
-            "selection of the root processes for processing datasets collectively; only datasets with a process which "
-            "is a child of a given root process are taken into account for triggering dependencies"
+            "selection of the processes for processing datasets collectively; only datasets with a process which "
+            "is a child of a given process are taken into account for triggering dependencies"
         ),
     )
 
     def __init__(self, *args, **kwargs):
-        super(RootProcessesTask, self).__init__(*args, **kwargs)
-        self.process_insts = UniqueObjectIndex(
+        super(ProcessCollectionTask, self).__init__(*args, **kwargs)
+        self._processes = UniqueObjectIndex(
             Process,
             [
                 self.config_inst.get_process(process)
@@ -143,13 +151,19 @@ class RootProcessesTask(ConfigTask):
             ],
         )
 
-    def get_datasets_from_root_processes(self) -> UniqueObjectIndex:
+    def processes(self, as_list: bool = False) -> Union[UniqueObjectIndex, List[Process]]:
+        if as_list:
+            return make_list(self._processes)
+        return self._processes
+
+    def get_datasets(self, process: Process, as_list: bool = False) -> Union[UniqueObjectIndex, List[Dataset]]:
         datasets = []
-        for process in self.process_insts.values():
-            for dataset in self.config_inst.datasets.values():
-                if len(dataset.processes) == 0:
-                    continue
-                dataset_root_process = dataset.processes.get_first().get_root_processes()[0]
-                if dataset_root_process == process:
-                    datasets.append(dataset)
+        for dataset in self.config_inst.datasets.values():
+            if len(dataset.processes) == 0:
+                continue
+            dataset_process = dataset.processes.get_first()
+            if dataset_process == process or dataset_process.has_parent_process(process):
+                datasets.append(dataset)
+        if as_list:
+            return datasets
         return UniqueObjectIndex(Dataset, datasets)
