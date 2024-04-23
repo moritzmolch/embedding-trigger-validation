@@ -162,9 +162,7 @@ cython_debug/
 # output directories of tasks and law commands
 .law/
 cache/
-jobs/
-software/
-store/
+data/
 
 # VSCode
 .vscode/
