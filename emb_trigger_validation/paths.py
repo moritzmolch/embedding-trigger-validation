@@ -34,3 +34,6 @@ CONFIG_DATA_DIR = os.path.join(DATA_DIR, "config")
 # output directory for task outputs (local and WLCG)
 LOCAL_STORE_DIR = os.path.join(DATA_DIR, "store")
 WLCG_STORE_DIR = os.path.join(os.path.basename(BASE_DIR), "store")
+
+# store for outputs of the config manager
+CONFIG_STORE_DIR = os.path.join(DATA_DIR, "config")

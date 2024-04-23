@@ -1,0 +1,9 @@
+processes:
+
+- name: emb
+  label: $\mu \to \tau$-embedding
+  color: (254, 198, 21)
+
+- name: dy
+  label: Drell-Yan ($\to \tau\tau$)
+  color: (61, 122, 253)

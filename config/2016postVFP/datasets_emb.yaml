@@ -1,0 +1,57 @@
+default:
+  process: emb
+  is_data: True
+  tags:
+  - embedding
+  metadata_fetcher:
+    name: DASMetadataFetcher
+    kwargs:
+      dbs_instance: prod/phys03
+
+
+datasets:
+
+- name: emb_2016F_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_F/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016G_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_G/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016H_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_H/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016F_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_F/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016G_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_G/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016H_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_H/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016F_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_F/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016G_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_G/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2016H_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2016_H/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER

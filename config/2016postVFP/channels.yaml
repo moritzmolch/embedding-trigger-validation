@@ -1,0 +1,23 @@
+channels:
+
+- name: et
+  label: $\mathrm{e}\tau_{\mathrm{h}}$
+  triggers:
+  - name: HLT_Ele25_eta2p1_WPTight_Gsf
+  - name: HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau20_SingleL1
+  - name: HLT_Ele24_eta2p1_WPLoose_Gsf_LooseIsoPFTau30
+
+- name: mt
+  label: $\mu\tau_{\mathrm{h}}$
+  triggers:
+  - name: HLT_IsoMu22
+  - name: HLT_IsoTkMu22
+  - name: HLT_IsoMu22_eta2p1
+  - name: HLT_IsoTkMu22_eta2p1
+  - name: HLT_IsoMu19_eta2p1_LooseIsoPFTau20_SingleL1
+
+- name: tt
+  label: $\tau_{\mathrm{h}}\tau_{\mathrm{h}}$
+  triggers:
+  - name: HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg
+  - name: HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg

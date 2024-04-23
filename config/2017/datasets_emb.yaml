@@ -1,0 +1,85 @@
+default:
+  process: emb
+  is_data: True
+  tags:
+  - embedding
+  metadata_fetcher:
+    name: GCConfigsMetadataFetcher
+
+
+datasets:
+
+- name: emb_2017B_et
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017B_ElTau.dbs
+
+- name: emb_2017C_et
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017C_ElTau.dbs
+
+- name: emb_2017D_et
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017D_ElTau.dbs
+
+- name: emb_2017E_et
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017E_ElTau.dbs
+
+- name: emb_2017F_et
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017F_ElTau.dbs
+
+- name: emb_2017B_mt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017B_MuTau.dbs
+
+- name: emb_2017C_mt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017C_MuTau.dbs
+
+- name: emb_2017D_mt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017D_MuTau.dbs
+
+- name: emb_2017E_mt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017E_MuTau.dbs
+
+- name: emb_2017F_mt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017F_MuTau.dbs
+
+- name: emb_2017B_tt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017B_TauTau.dbs
+
+- name: emb_2017C_tt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017C_TauTau.dbs
+
+- name: emb_2017D_tt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017D_TauTau.dbs
+
+- name: emb_2017E_tt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017E_TauTau.dbs
+
+- name: emb_2017F_tt
+  metadata_fetcher:
+    kwargs:
+      rel_dbs_file_path: dbs/ul_embedding_rerun_puppi/Run2017F_TauTau.dbs

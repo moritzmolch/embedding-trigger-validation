@@ -1,0 +1,82 @@
+default:
+  process: emb
+  is_data: True
+  tags:
+  - embedding
+  metadata_fetcher:
+    name: DASMetadataFetcher
+
+
+datasets:
+
+- name: emb_2018A_et
+  process: emb_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018A/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018B_et
+  process: emb_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018B/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018C_et
+  process: emb_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018C/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018D_et
+  process: emb_et
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018D/ElTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018A_mt
+  process: emb_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018A/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018B_mt
+  process: emb_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018B/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018C_mt
+  process: emb_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018C/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018D_mt
+  process: emb_mt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018D/MuTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018A_tt
+  process: emb_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018A/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018B_tt
+  process: emb_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018B/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018C_tt
+  process: emb_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018C/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER
+
+- name: emb_2018D_tt
+  process: emb_tt
+  metadata_fetcher:
+    kwargs:
+      key: /EmbeddingRun2018D/TauTauFinalState-inputDoubleMu_106X_ULegacy_miniAOD-v1/USER

@@ -1,0 +1,47 @@
+default:
+  cmssw:
+    release: CMSSW_10_6_28_patch1
+    arch: slc7_amd64_gcc700
+    custom_packages_script: ${ETV_BASE_PATH}/scripts/cmssw_packages_embedding.sh
+
+campaigns:
+
+- name: ul_2016preVFP
+  label: "2016preVFP"
+  process_config_files:
+  - ./processes.yaml
+  dataset_config_files:
+  - ./2016preVFP/datasets_emb.yaml
+  - ./2016preVFP/datasets_dyjets_ll.yaml
+  channel_config_files:
+  - ./2016preVFP/channels.yaml
+
+- name: ul_2016postVFP
+  label: "2016postVFP"
+  process_config_files:
+  - ./processes.yaml
+  dataset_config_files:
+  - ./2016postVFP/datasets_emb.yaml
+  - ./2016postVFP/datasets_dyjets_ll.yaml
+  channel_config_files:
+  - ./2016preVFP/channels.yaml
+
+- name: ul_2017
+  label: "2017"
+  process_config_files:
+  - ./processes.yaml
+  dataset_config_files:
+  - ./2017/datasets_emb.yaml
+  - ./2017/datasets_dyjets_ll.yaml
+  channel_config_files:
+  - ./2017/channels.yaml
+
+- name: ul_2018
+  label: "2018"
+  process_config_files:
+  - ./processes.yaml
+  dataset_config_files:
+  - ./2018/datasets_emb.yaml
+  - ./2018/datasets_dyjets_ll.yaml
+  channel_config_files:
+  - ./2018/channels.yaml

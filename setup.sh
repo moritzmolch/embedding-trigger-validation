@@ -23,7 +23,7 @@ action () {
     export ETV_MODULES="${ETV_BASE}/modules"
 
     # set up software stack by using a recent LCG view
-    source "/cvmfs/sft.cern.ch/lcg/views/LCG_104/x86_64-centos7-gcc11-opt/setup.sh"
+    source "/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-centos7-gcc12-opt/setup.sh"
 
     # set up the GRID environment
     source "/cvmfs/grid.cern.ch/centos7-umd4-ui-211021/etc/profile.d/setup-c7-ui-python3-example.sh"
