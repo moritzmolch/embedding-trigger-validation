@@ -1,11 +1,12 @@
 from law.util import DotDict
-from order import Campaign, Channel, Dataset, Process
-from typing import Any, Dict, List, Optional, Tuple
+from order import Campaign, Channel, Dataset, Process, UniqueObjectIndex
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 
 def create_campaign(
     name: str,
     id: int,
+    datasets: Optional[Union[List[Dataset], UniqueObjectIndex]] = None,
     label: Optional[str] = None,
     cmssw: Optional[Dict[str, Any]] = None,
     aux: Optional[Dict[str, Any]] = None,
@@ -24,6 +25,7 @@ def create_campaign(
     campaign = Campaign(
         name=name,
         id=id,
+        datasets=datasets,
         aux=aux,
     )
 
@@ -36,19 +38,20 @@ def create_dataset(
     n_events: int,
     n_files: int,
     process: Process,
+    is_data: Optional[bool] = None,
     tags: Optional[List[str]] = None,
     redirectors: Optional[List[str]] = None,
-    lfns: Optional[List[str]] = None,
+    filelist: Optional[List[str]] = None,
     aux: Optional[Dict[str, Any]] = None,
 ):
     """
     Create a dataset, which is a collection of dataset files.
     """
 
-     # `Dataset` does not have a `redirectors` and `lfns` member, so add it to the auxiliary data
+     # `Dataset` does not have a `redirectors` and `filelist` member, so add it to the auxiliary data
     aux = aux or {}
     aux.update(dict(
-        lfns=lfns or [],
+        filelist=filelist or [],
         redirectors=redirectors or [],
     ))
     aux = DotDict.wrap(aux)
@@ -60,6 +63,7 @@ def create_dataset(
         processes=[process],
         n_events=n_events,
         n_files=n_files,
+        is_data=is_data,
         tags=tags,
         aux=aux,
     )
@@ -69,6 +73,7 @@ def create_dataset(
 
 def create_process(
     name: str,
+    id: int,
     label: Optional[str],
     color: Optional[Tuple[int, int, int]],
     aux: Optional[Dict[str, Any]] = None,
@@ -83,6 +88,7 @@ def create_process(
     # create the process
     process = Process(
         name=name,
+        id=id,
         label=label,
         color1=color,
         aux=aux,
@@ -93,6 +99,7 @@ def create_process(
 
 def create_channel(
     name: str,
+    id: int,
     label: Optional[str],
     triggers: Optional[List[str]],
     aux: Optional[Dict[str, Any]] = None,
@@ -109,6 +116,7 @@ def create_channel(
     # create the process
     channel = Channel(
         name=name,
+        id=id,
         label=label,
         aux=aux,
     )
@@ -116,12 +124,20 @@ def create_channel(
     return channel
 
 
-def check_keys(d: Dict[str, Any], required=None, optional=None):
+def check_keys(
+    d: Dict[str, Any],
+    required: Optional[Set[Tuple[str, type]]] = None, 
+    optional: Optional[Set[Tuple[str, type]]] = None
+):
+
+    # set `required` and `optional` properly
+    required = required or {}
+    optional = optional or {}
 
     # get the keys of the mapping
     required_keys = set([item[0] for item in required])
     optional_keys = set([item[0] for item in optional])
-    keys = set(map.keys())
+    keys = set(d.keys())
 
     # check if all required keys are set
     required_but_not_set = keys.intersection(required_keys).difference(required_keys)

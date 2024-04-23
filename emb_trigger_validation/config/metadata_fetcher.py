@@ -20,26 +20,6 @@ import yaml
 from emb_trigger_validation.paths import CONFIG_DATA_DIR
 
 
-class MetadataFetcherMeta(ABCMeta):
-
-    fetchers = {}
-
-    def __new__(meta_cls, class_name, bases, class_dict):
-        # create the class
-        cls = super().__new__(meta_cls, class_name, bases, class_dict)
-
-        # get the name of the metadata fetcher and register it
-        name = cls.__name__
-        if name in meta_cls.fetchers:
-            raise ValueError("metadata fetcher '{}' has previously been registered".format(name))
-        meta_cls.fetchers[name] = cls
-
-    @classmethod
-    def get_cls(meta_cls, name: str):
-         if name in meta_cls.fetchers:
-            raise ValueError("metadata fetcher '{}' does not exist".format(name))       
-
-
 class MetadataStore():
 
     __shared_state = {}
@@ -62,7 +42,7 @@ class MetadataStore():
     def _init_store(self, config_data_dir: str):
         store = {
             os.path.splitext(os.path.basename(store_file))[0]: (store_file, None)
-            for store_file in glob.glob(config_data_dir, "*.json")
+            for store_file in glob.glob(os.path.join(config_data_dir, "*.json"))
         }
         return store
 
@@ -96,7 +76,7 @@ class MetadataStore():
         return obj
 
     def put(self, key, obj):
-        if not self.has_key(key):
+        if self.has_key(key):
             raise ValueError("object with key '{}' already exists".format(key))
 
         # create a path for the new store item
@@ -111,24 +91,47 @@ class MetadataStore():
         return obj
 
 
+class MetadataFetcherMeta(ABCMeta):
+
+    fetchers = {}
+
+    def __new__(meta_cls, class_name, bases, class_dict):
+        # create the class
+        cls = super().__new__(meta_cls, class_name, bases, class_dict)
+
+        # get the name of the metadata fetcher and register it
+        name = cls.__name__
+        if name in meta_cls.fetchers:
+            raise ValueError("metadata fetcher '{}' has previously been registered".format(name))
+        meta_cls.fetchers[name] = cls
+
+        return cls
+
+    @classmethod
+    def get_cls(meta_cls, name: str):
+        if name not in meta_cls.fetchers:
+            raise ValueError("metadata fetcher '{}' does not exist".format(name))       
+        return meta_cls.fetchers[name]
+
+
 class BaseMetadataFetcher(metaclass=MetadataFetcherMeta):
 
     _store = MetadataStore()
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self._kwargs = kwargs
         self._instance_key = self.create_instance_hash(self._kwargs)
 
     def create_instance_hash(self, kwargs: Dict[str, Any]):
         # create a hash for the metadata fetcher in combination with the used keyword arguments
-        
+
         # convert the dictionary of keyword arguments into a sorted list of tuples
         kwargs_tuples = []
         for k in sorted(kwargs):
             v = kwargs[k]
             kwargs_tuples.append((k, self.create_instance_hash(v) if isinstance(v, dict) else v))
-        
+
         # concatenate the class name with the keyword arguments and create the hasn
         instance_hash = create_hash(tuple([self.__class__.__name__] + kwargs_tuples))
 
@@ -141,7 +144,7 @@ class BaseMetadataFetcher(metaclass=MetadataFetcherMeta):
         # if the query has previously been performed, just load the metadata from the store
         if store.has_key(self._instance_key):
             return store.get(self._instance_key)
-        
+
         # if the data is not available yet, fetch it from the source and put it into the store
         result = self.fetch(**self._kwargs)
         store.put(self._instance_key, result)
@@ -194,7 +197,7 @@ class YAMLMetadataFetcher(BaseMetadataFetcher):
 
 class DASMetadataFetcher(BaseMetadataFetcher):
 
-    def fetch(self, /, dbs_key: str, dbs_instance: str = "prod/global"):
+    def fetch(self, /, key: str, dbs_instance: str = "prod/global"):
         """
         Retrieve the metadata of a dataset, which is registered at the CMS Data Aggregation System (DAS).
 
@@ -236,7 +239,7 @@ class DASMetadataFetcher(BaseMetadataFetcher):
             [
                 "dasgoclient",
                 "-query",
-                "file dataset={} instance={}".format(dbs_key, dbs_instance),
+                "file dataset={} instance={}".format(key, dbs_instance),
                 "-json",
             ],
             stdout=subprocess.PIPE,
@@ -264,7 +267,7 @@ class DASMetadataFetcher(BaseMetadataFetcher):
             [
                 "dasgoclient",
                 "-query",
-                "dataset={} instance={}".format(dbs_key, dbs_instance),
+                "dataset={} instance={}".format(key, dbs_instance),
                 "-json",
             ],
             stdout=subprocess.PIPE,

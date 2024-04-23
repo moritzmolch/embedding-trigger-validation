@@ -18,8 +18,8 @@ from emb_trigger_validation.paths import CONFIG_STORE_DIR
 class ConfigManager():
 
     def __init__(self, config_file):
-        self._config_file = config_file
-        self._campaign_configs = self._load_campaign_configs(self._config_path)
+        self._config_file = os.path.abspath(config_file)
+        self._campaign_configs = self._load_campaign_configs(self._config_file)
 
     def get_campaign_config(self, name: str) -> Config:
         for campaign_config in self.campaign_configs:
@@ -29,6 +29,13 @@ class ConfigManager():
 
     def _get_config_cache_path(self) -> str:
         return CONFIG_STORE_DIR
+
+    def _sanitize_paths(self, config_paths) -> List[str]:
+        base_path = os.path.dirname(self._config_file)
+        return [
+            p if os.path.isabs(p) else os.path.join(base_path, p)
+            for p in config_paths
+        ]
 
     def _load_campaign_configs(self, config_file: str):
         # create the container for the campaign configs
@@ -47,14 +54,26 @@ class ConfigManager():
             # merge config of this campaign with default values
             # check the keys and values of campaign config dictionary
             # update the ID argument: use automatic increment
-            campaign_dict = merge_dicts(default, cfg_item)
-            check_keys(campaign_dict, {("name", str), ("label", str), ("cmssw", dict)}, {("aux", dict)})
-            campaign_dict.update({"id": "+"})
+            campaign_dict = merge_dicts(default, cfg_item, deep=True)
 
             # obtain the configuration files for the processes, datasets and channels
-            process_config_files = campaign_dict.pop("processes_config_files", [])
-            dataset_config_files = campaign_dict.pop("dataset_config_files", [])
-            channel_config_files = campaign_dict.pop("channel_config_files", [])
+            process_config_files = self._sanitize_paths(campaign_dict.pop("process_config_files", []))
+            dataset_config_files = self._sanitize_paths(campaign_dict.pop("dataset_config_files", []))
+            channel_config_files = self._sanitize_paths(campaign_dict.pop("channel_config_files", []))
+
+            # check the keys and use automatic ID increment
+            check_keys(
+                campaign_dict,
+                required={
+                    ("name", str),
+                    ("label", str),
+                    ("cmssw", dict),
+                },
+                optional={
+                    ("aux", dict),
+                }
+            )
+            campaign_dict.update({"id": "+"})
 
             # load the processes from the declared configuration files
             processes = []
@@ -104,14 +123,32 @@ class ConfigManager():
         for cfg_item in cfg_dict["datasets"]:
 
             # merge config of this dataset with default values
-            dataset_dict = merge_dicts(default, cfg_item)
+            dataset_dict = merge_dicts(default, cfg_item, deep=True)
 
             # check the required and optional keys and values of the dictionary
-            check_keys(dataset_dict, {("name", str), ("process", str), ("metadata_fetcher", dict)}, {("tags": list, "aux", dict)})
+            check_keys(
+                dataset_dict,
+                required={
+                    ("name", str),
+                    ("process", str),
+                    ("metadata_fetcher", dict),
+                },
+                optional={
+                    ("is_data", bool),
+                    ("tags", list),
+                    ("aux", dict),
+                },
+            )
 
             # get the metadata fetcher config, check the keys
             metadata_fetcher_dict = dataset_dict.pop("metadata_fetcher")
-            check_keys(metadata_fetcher_dict, {"name", "kwargs"})
+            check_keys(
+                metadata_fetcher_dict,
+                required={
+                    ("name", str),
+                    ("kwargs", dict),
+                },
+            )
 
             # get the metadata
             name, kwargs = metadata_fetcher_dict["name"], metadata_fetcher_dict["kwargs"]
@@ -123,13 +160,28 @@ class ConfigManager():
 
             # get the process object
             process_name = dataset_dict["process"]
-            process = processes.get(process_name)
-
-            # update the ID argument: use automatic increment
-            dataset_dict.update(dict(id="+", process=process))
+            dataset_dict.update({"process": processes.get(process_name)})
 
             # finally, check the keys of the dataset dict
-            check_keys(dataset_dict, {("name", str), ("process", Process), ("n_events", int), ("n_files", int), ("tags", list), ("redirectors", list), ("lfns", list)}, {"aux", dict})
+            check_keys(
+                dataset_dict,
+                required={
+                    ("name", str),
+                    ("process", Process),
+                    ("n_events", int),
+                    ("n_files", int),
+                    ("redirectors", list),
+                    ("filelist", list),
+                },
+                optional={
+                    ("is_data", bool),
+                    ("tags", list),
+                    ("aux", dict),
+                },
+            )
+
+            # update the ID argument: use automatic increment
+            dataset_dict.update(dict(id="+"))
 
             # create the dataset and add it to the collection
             datasets.append(create_dataset(**dataset_dict))
@@ -150,10 +202,19 @@ class ConfigManager():
         for cfg_item in cfg_dict["processes"]:
 
             # merge config of this process with default values
-            process_dict = merge_dicts(default, cfg_item)
+            process_dict = merge_dicts(default, cfg_item, deep=True)
 
             # check the required and optional keys and values of the dictionary
-            check_keys(process_dict, {("name", str), ("label", str)}, {("color", str)})
+            check_keys(
+                process_dict,
+                required={
+                    ("name", str),
+                    ("label", str),
+                },
+                optional={
+                    ("color", list),
+                },
+            )
 
             # update the ID argument: use automatic increment
             process_dict.update({"id": "+"})
@@ -177,10 +238,20 @@ class ConfigManager():
         for cfg_item in cfg_dict["channels"]:
 
             # merge config of this channel with default values
-            channel_dict = merge_dicts(default, cfg_item)
+            channel_dict = merge_dicts(default, cfg_item, deep=True)
 
             # check the required and optional keys and values of the dictionary
-            check_keys(channel_dict, {("name", str), ("label", str), ("triggers", list)}, {("aux", dict)})
+            check_keys(
+                channel_dict,
+                required={
+                    ("name", str),
+                    ("label", str),
+                    ("triggers", list),
+                },
+                optional={
+                    ("aux", dict),
+                },
+            )
 
             # update the ID argument: use automatic increment
             channel_dict.update({"id": "+"})
