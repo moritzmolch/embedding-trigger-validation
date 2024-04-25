@@ -9,7 +9,8 @@ import luigi
 import os
 
 from emb_trigger_validation.tasks.base import BaseTask
-from emb_trigger_validation.tasks.bundle import BundleRepository
+from emb_trigger_validation.tasks.bundle import BundleConfigData, BundleRepository
+from emb_trigger_validation.paths import BASE_DIR
 
 
 class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
@@ -41,15 +42,15 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
     )
 
     htcondor_request_memory = law.BytesParameter(
-        default="4GB",
-        description="allocated memory for this job, the value can be accompained by the unit, e.g. '4 GB'; default: '4 GB'",
+        default="1GB",
+        description="allocated memory for this job, the value can be accompained by the unit, e.g. 'GB'; default: '1 GB'",
         unit="MB",
         significant=False,
     )
 
     htcondor_request_disk = law.BytesParameter(
         default="15GB",
-        description="allocated hard drive storage for this job, the value can be accompained by the unit, e.g. '4 GB'; default: '15 GB'",
+        description="allocated hard drive storage for this job, the value can be accompained by the unit, e.g. 'GB'; default: '15 GB'",
         unit="kB",
         significant=False,
     )
@@ -109,6 +110,7 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
     def htcondor_workflow_requires(self):
         reqs = OrderedDict(law.contrib.htcondor.HTCondorWorkflow.htcondor_workflow_requires(self))
         reqs["BundleRepository"] = BundleRepository.req(self)
+        reqs["BundleConfigData"] = BundleConfigData.req(self)
         return reqs
 
     def htcondor_output_directory(self):
@@ -123,7 +125,7 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
         return factory
 
     def htcondor_bootstrap_file(self):
-        return os.path.join(os.path.expandvars("${ETV_BASE_PATH}"), "scripts", "bootstrap.sh")
+        return os.path.join(BASE_DIR, "scripts", "bootstrap.sh")
 
     def htcondor_job_config(self, config, job_num, branches):
 
@@ -214,9 +216,13 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
         config.render_variables["etv_bootstrap_name"] = "htcondor"
 
         uris, pattern = get_bundle_info(reqs["BundleRepository"])
-        config.render_variables["etv_repo_name"] = os.path.basename(os.environ["ETV_BASE_PATH"])
+        config.render_variables["etv_repo_name"] = os.path.basename(BASE_DIR)
         config.render_variables["etv_repo_uris"] = uris
         config.render_variables["etv_repo_pattern"] = pattern
+
+        uris, pattern = get_bundle_info(reqs["BundleConfigData"])
+        config.render_variables["etv_config_data_uris"] = uris
+        config.render_variables["etv_config_data_pattern"] = pattern
 
         uris, pattern = "", ""
         if "BundleCMSSW" in reqs:

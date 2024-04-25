@@ -7,6 +7,7 @@ import luigi
 import os
 
 from emb_trigger_validation.tasks.base import BaseTask
+from emb_trigger_validation.paths import BASE_DIR, CONFIG_DATA_DIR
 
 
 class BundleRepository(
@@ -32,7 +33,7 @@ class BundleRepository(
     ]
 
     def get_repo_path(self):
-        return os.path.expandvars("${ETV_BASE_PATH}")
+        return BASE_DIR
 
     def single_output(self):
         return self.remote_target(
@@ -51,6 +52,48 @@ class BundleRepository(
         # bundle repository
         bundle = law.LocalFileTarget(is_tmp="tgz", tmp_dir=os.environ["TMPDIR"])
         self.bundle(bundle)
+
+        # log the size
+        self.publish_message(
+            "bundled repository archive, size is {:.2f} {}".format(
+                *human_bytes(bundle.stat().st_size)
+            )
+        )
+
+        # transfer replica archives
+        self.transfer(bundle)
+
+
+class BundleConfigData(BaseTask, law.contrib.tasks.TransferLocalFile):
+
+    replicas = luigi.IntParameter(
+        description="number of replica archives to generate; default: 1",
+        default=1,
+    )
+
+    def get_config_data_path(self):
+        return CONFIG_DATA_DIR
+
+    def single_output(self):
+        return self.remote_target(
+            "{}.tgz".format(os.path.basename(self.get_config_data_path())),
+        )
+
+    def get_file_pattern(self):
+        path = os.path.expandvars(os.path.expanduser(self.single_output().path))
+        return self.get_replicated_path(path, i=None if self.replicas <= 0 else "*")
+
+    def output(self):
+        return law.contrib.tasks.TransferLocalFile.output(self)
+
+    @law.decorator.safe_output
+    def run(self):
+        # bundle repository
+        bundle = law.LocalFileTarget(is_tmp="tgz", tmp_dir=os.environ["TMPDIR"])
+        config_data_target = law.LocalDirectoryTarget(self.get_config_data_path())
+
+        with self.publish_step("bundle config data directory ..."):
+            bundle.dump(config_data_target, formatter="tar")
 
         # log the size
         self.publish_message(

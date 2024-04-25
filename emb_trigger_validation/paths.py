@@ -20,7 +20,7 @@ BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 CONFIG_DIR = os.path.join(BASE_DIR, "config")
 DATA_DIR = os.path.join(BASE_DIR, "data")
 MODULES_DIR = os.path.join(BASE_DIR, "modules")
-SOFTWARE_DIR = os.path.join(BASE_DIR, "software")
+SOFTWARE_DIR = os.path.join(DATA_DIR, "software")
 
 # file containing the base configuration
 CONFIG_FILE = os.path.join(CONFIG_DIR, "config.yaml")
@@ -28,12 +28,13 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, "config.yaml")
 # output directory for job submission files
 JOBS_DIR = os.path.join(DATA_DIR, "jobs")
 
-# output directory for output files of the config module
+# output directories for output files of the config module and cache files
 CONFIG_DATA_DIR = os.path.join(DATA_DIR, "config")
+CACHE_DIR = os.path.join(DATA_DIR, "cache")
 
 # output directory for task outputs (local and WLCG)
 LOCAL_STORE_DIR = os.path.join(DATA_DIR, "store")
-WLCG_STORE_DIR = os.path.join(os.path.basename(BASE_DIR), "store")
+WLCG_STORE_DIR = os.path.join(os.path.basename(BASE_DIR), "data", "store")
 
 # store for outputs of the config manager
 CONFIG_STORE_DIR = os.path.join(DATA_DIR, "config")

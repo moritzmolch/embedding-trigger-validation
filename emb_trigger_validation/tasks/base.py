@@ -2,13 +2,14 @@ from collections import OrderedDict
 import law
 import law.contrib.wlcg
 from law.util import iter_chunks
+from law import Config
 import luigi
-from order import Config, Dataset, Process, UniqueObjectIndex
-from order.util import make_list
+from order import Dataset, Process, UniqueObjectIndex
 import os
 from typing import List, Union
 
-from emb_trigger_validation.config.config_manager import ConfigManager
+from emb_trigger_validation.paths import LOCAL_STORE_DIR, WLCG_STORE_DIR, CONFIG_FILE
+from emb_trigger_validation.config import config_manager
 
 
 class BaseTask(law.Task):
@@ -23,25 +24,25 @@ class BaseTask(law.Task):
 
     local_store_path = luigi.PathParameter(
         exists=False,
-        description="path to the local file store for task outputs; default: '{}".format(os.environ["ETV_LOCAL_STORE_PATH"]),
-        default=os.environ["ETV_LOCAL_STORE_PATH"],
+        description="path to the local file store for task outputs; default: '{}".format(LOCAL_STORE_DIR),
+        default=LOCAL_STORE_DIR,
     )
 
     wlcg_store_name = luigi.Parameter(
         description=(
             "name of the remote file system for task outputs; corresponds to the name of a WLCG file system defined "
-            "in law.cfg; default: '{}'".format(os.environ["ETV_WLCG_STORE_NAME"])
+            "in law.cfg; default: '{}'".format(Config().instance().get("target", "default_wlcg_fs"))
         ),
-        default=os.environ["ETV_WLCG_STORE_NAME"],
+        default=Config().instance().get("target", "default_wlcg_fs"),
     )
 
     wlcg_store_path = luigi.PathParameter(
         exists=False,
         description=(
             "path to the remote file store for task outputs; the path is relative to the base URI of the respective "
-            "file system; default: '{}'".format(os.environ["ETV_WLCG_STORE_PATH"])
+            "file system; default: '{}'".format(WLCG_STORE_DIR)
         ),
-        default=os.environ["ETV_WLCG_STORE_PATH"],
+        default=WLCG_STORE_DIR,
     )
 
     _wlcg_stores = {}
@@ -71,36 +72,31 @@ class BaseTask(law.Task):
         return target_class(self.path(store, *parts, **kwargs), fs=fs)
 
 
-class ConfigTask(BaseTask):
+class CampaignConfigTask(BaseTask):
 
-    config = luigi.Parameter(
+    campaign = luigi.Parameter(
         description=(
-            "name of the config for a specific data-taking era; the name corresponds to the name of a directory in "
-            "'config/analysis', e.g. 'ul17_miniaod'"
+            "name of a campaign, e.g. for a specific data-taking era; choose a name of one of the campaigns defined "
+            "in the config file {}".format(CONFIG_FILE)
         ),
     )
 
     def __init__(self, *args, **kwargs):
-        super(ConfigTask, self).__init__(*args, **kwargs)
-        self._config = self.get_config(self.config)
+        super().__init__(*args, **kwargs)
+        self._campaign_config = config_manager.get_campaign_config(self.campaign)
 
-    @staticmethod
-    def get_config(name: str) -> Config:
-        return ConfigManager().load_config(os.path.join(os.environ["ETV_CONFIG_PATH"], "analysis", name, "config.yaml"))
-
-    def config(self):
-        return self._config
+    def get_campaign_config(self) -> Config:
+        return self._campaign_config
 
     def path(self, store, *parts, **kwargs) -> str:
-        return os.path.join(store, self.version, self.__class__.__name__, self.config_inst.name, *parts)
+        return os.path.join(store, self.version, self.__class__.__name__, self.get_campaign_config().name, *parts)
 
 
-class DatasetTask(ConfigTask):
+class DatasetTask(CampaignConfigTask):
 
     dataset = luigi.Parameter(
         description=(
-            "name of the dataset; the available dataset names for a configuration are defined in the 'datasets' "
-            "section in 'config/analysis/<NAME OF THE CONFIG>/config.yaml"
+            "name of the dataset within the declared campaign",
         ),
     )
 
@@ -114,13 +110,13 @@ class DatasetTask(ConfigTask):
 
     def __init__(self, *args, **kwargs):
         super(DatasetTask, self).__init__(*args, **kwargs)
-        self._dataset = self.config().get_dataset(self.dataset)
+        self._dataset = self.get_campaign_config().get_dataset(self.dataset)
 
-    def dataset(self) -> Dataset:
+    def get_dataset(self):
         return self._dataset
 
-    def create_branch_map(self) -> Dict[int, Any]:
-        file_index_chunks = iter_chunks(range(self.dataset_inst.n_files), size=self.file_group_size)
+    def create_branch_map(self):
+        file_index_chunks = iter_chunks(range(self.get_dataset().n_files), size=self.file_group_size)
         return OrderedDict({
             i: {
                 "file_index": file_index,
@@ -129,10 +125,10 @@ class DatasetTask(ConfigTask):
         })
 
     def path(self, store, *parts, **kwargs) -> str:
-        return os.path.join(store, self.version, self.__class__.__name__, self.config_inst.name, self.dataset_inst.name, *parts)
+        return os.path.join(store, self.__class__.__name__, self.get_campaign_config().name, self.get_dataset().name, self.version, *parts)
 
 
-class ProcessCollectionTask(ConfigTask):
+class ProcessCollectionTask(CampaignConfigTask):
 
     processes = law.CSVParameter(
         description=(
@@ -146,24 +142,20 @@ class ProcessCollectionTask(ConfigTask):
         self._processes = UniqueObjectIndex(
             Process,
             [
-                self.config_inst.get_process(process)
-                for process in self.root_processes
+                self.get_campaign_config().get_process(process)
+                for process in self.processes
             ],
         )
 
-    def processes(self, as_list: bool = False) -> Union[UniqueObjectIndex, List[Process]]:
-        if as_list:
-            return make_list(self._processes)
+    def get_processes(self) -> Union[UniqueObjectIndex, List[Process]]:
         return self._processes
 
-    def get_datasets(self, process: Process, as_list: bool = False) -> Union[UniqueObjectIndex, List[Dataset]]:
+    def get_datasets_with_process(self, process: Process) -> Union[UniqueObjectIndex, List[Dataset]]:
         datasets = []
-        for dataset in self.config_inst.datasets.values():
+        for dataset in self.get_campaign_config().datasets.values():
             if len(dataset.processes) == 0:
                 continue
             dataset_process = dataset.processes.get_first()
             if dataset_process == process or dataset_process.has_parent_process(process):
                 datasets.append(dataset)
-        if as_list:
-            return datasets
         return UniqueObjectIndex(Dataset, datasets)

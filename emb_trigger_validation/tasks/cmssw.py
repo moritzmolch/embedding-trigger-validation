@@ -8,7 +8,8 @@ import shlex
 from typing import Any, Dict, List, Optional, Union
 
 from emb_trigger_validation.cmssw import CMSSWSandbox
-from emb_trigger_validation.tasks.base import BaseTask, ConfigTask
+from emb_trigger_validation.paths import SOFTWARE_DIR
+from emb_trigger_validation.tasks.base import BaseTask, CampaignConfigTask
 
 
 class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
@@ -132,20 +133,20 @@ class CMSSWCommandTask(BaseTask, metaclass=ABCMeta):
                 raise RuntimeError("command failed with exit code {}".format(p.returncode))
 
 
-class SetupCMSSWForConfig(CMSSWCommandTask, ConfigTask):
+class SetupCMSSWForCampaign(CMSSWCommandTask, CampaignConfigTask):
 
     def cmssw_parent_dir(self) -> str:
         cmssw_hash = create_hash((self.cmssw_release(), self.cmssw_arch(), self.cmssw_custom_packages_script()))
-        return os.path.join(os.environ["ETV_SOFTWARE_PATH"], "cmssw", "{}_{}".format(self.cmssw_release(), cmssw_hash))
+        return os.path.join(SOFTWARE_DIR, "cmssw", "{}_{}".format(self.cmssw_release(), cmssw_hash))
 
     def cmssw_release(self) -> str:
-        return self.config_inst.x.cmssw.release
+        return self.get_campaign_config().campaign.x.cmssw.release
 
     def cmssw_arch(self) -> str:
-        return self.config_inst.x.cmssw.arch
+        return self.get_campaign_config().campaign.x.cmssw.arch
 
     def cmssw_custom_packages_script(self) -> Union[str, None]:
-        path = self.config_inst.x.cmssw.get("custom_packages_script", None)
+        path = self.get_campaign_config().campaign.x.cmssw.get("custom_packages_script", None)
         if path is not None:
             path = os.path.expandvars(path)
         return path
