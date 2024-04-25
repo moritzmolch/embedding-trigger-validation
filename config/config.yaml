@@ -2,7 +2,8 @@ default:
   cmssw:
     release: CMSSW_10_6_28_patch1
     arch: slc7_amd64_gcc700
-    custom_packages_script: ${ETV_BASE_PATH}/scripts/cmssw_packages_embedding.sh
+    custom_packages_script: ${ETV_BASE}/scripts/cmssw_packages_embedding.sh
+
 
 campaigns:
 
@@ -24,7 +25,7 @@ campaigns:
   - ./2016postVFP/datasets_emb.yaml
   - ./2016postVFP/datasets_dyjets_ll.yaml
   channel_config_files:
-  - ./2016preVFP/channels.yaml
+  - ./2016postVFP/channels.yaml
 
 - name: ul_2017
   label: "2017"
