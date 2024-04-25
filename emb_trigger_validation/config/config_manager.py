@@ -22,7 +22,7 @@ class ConfigManager():
         self._campaign_configs = self._load_campaign_configs(self._config_file)
 
     def get_campaign_config(self, name: str) -> Config:
-        for campaign_config in self.campaign_configs:
+        for campaign_config in self._campaign_configs:
             if campaign_config.name == name:
                 return campaign_config
         raise ValueError("campaign with name '{}' not found".format(name))
