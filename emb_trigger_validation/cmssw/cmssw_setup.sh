@@ -163,11 +163,11 @@ _setup_cmssw () {
 
         # paths for sourcing grid access and access to wlcg tools before the full environment has been loaded
         local grid_wn_script="/cvmfs/grid.cern.ch/centos7-wn-4.0.5-1_umd4v1/etc/profile.d/setup-c7-wn-example.sh"
-        local wlcg_tools_script="${ETV_MODULES_PATH}/law/law/contrib/wlcg/scripts/law_wlcg_tools.sh"
+        local wlcg_tools_script="${ETV_MODULES}/law/law/contrib/wlcg/scripts/law_wlcg_tools.sh"
 
         # ensure that needed environment variables are set
-        if [[ -z "${ETV_MODULES_PATH}" ]]; then
-            _error "environment variable \$ETV_MODULES_PATH must be set"
+        if [[ -z "${ETV_MODULES}" ]]; then
+            _error "environment variable \$ETV_MODULES must be set"
             return "6"
         fi
 

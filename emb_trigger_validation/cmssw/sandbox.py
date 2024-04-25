@@ -14,6 +14,7 @@ from law import Task
 from law.logger import get_logger
 from law.util import create_hash, readable_popen
 
+from emb_trigger_validation.paths import CACHE_DIR
 
 logger = get_logger(__name__)
 
@@ -87,7 +88,7 @@ class CMSSWSandbox():
         self._cmssw_setup_exec = os.path.join(os.path.abspath(os.path.dirname(__file__)), "cmssw_setup.sh")        
 
         # set the path to the directory for caching the CMSSW environment
-        self._env_cache_dir = os.path.join(os.environ["ETV_CACHE_PATH"], "cmssw", "envs")
+        self._env_cache_dir = os.path.join(CACHE_DIR, "cmssw", "envs")
 
         # calculate a unique hash for caching the environment of the CMSSW release
         self._hash = create_hash((self._parent_dir, self._release, self._arch, self._custom_packages_script))
