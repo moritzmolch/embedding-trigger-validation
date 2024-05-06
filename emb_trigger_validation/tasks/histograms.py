@@ -2,6 +2,7 @@ import awkward as ak
 import hist
 import law
 import numpy as np
+import os
 
 from emb_trigger_validation.tasks.base import DatasetTask, ProcessCollectionTask
 from emb_trigger_validation.tasks.ntuples import MergeTauTriggerNtuples
@@ -34,8 +35,6 @@ class CreateCutflowHistogram(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflo
                 if trigger["name"] == self.trigger:
                     self._trigger = trigger
                     break
-        #if self._trigger is None:
-        #    raise ValueError(f"trigger with name '{self.trigger}' not found")
 
     def modify_polling_status_line(self, status_line):
         return "{} - dataset: {}".format(status_line, law.util.colored(self.get_dataset().name, color='light_cyan'))
@@ -197,11 +196,14 @@ class CreateCutflowHistogramsForDataset(CreateCutflowHistogram):
             if trigger["name"] == self.branch_data["trigger"]:
                 return trigger
 
+    def path(self, store, *parts, **kwargs) -> str:
+        return os.path.join(store, CreateCutflowHistogram.__name__, self.get_campaign_config().name, self.get_dataset().name, self.version, *parts)
+
     def run(self):
         self.run_branch(self.get_trigger())
 
 
-class CreateCutflowHistogramsWrapper(ProcessCollectionTask, law.WrapperTask):
+class CreateCutflowHistogramWrapper(ProcessCollectionTask, law.WrapperTask):
 
     def requires(self):
         reqs = []
