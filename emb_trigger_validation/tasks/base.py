@@ -131,7 +131,7 @@ class DatasetTask(CampaignConfigTask):
         })
 
     def path(self, store, *parts, **kwargs) -> str:
-        return os.path.join(store, self.__class__.__name__, self.get_campaign_config().name, self.get_dataset().name, self.version, *parts)
+        return os.path.join(store, self.version, self.__class__.__name__, self.get_campaign_config().name, self.get_dataset().name, *parts)
 
 
 class ProcessCollectionTask(CampaignConfigTask):
