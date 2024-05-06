@@ -2,8 +2,8 @@ processes:
 
 - name: emb
   label: $\mu \to \tau$-embedding
-  color: [254, 198, 21]
+  color: [255, 169, 14]
 
 - name: dyjets_ll
   label: Drell-Yan ($\to \tau\tau$)
-  color: [61, 122, 253]
+  color: [63, 144, 218]
