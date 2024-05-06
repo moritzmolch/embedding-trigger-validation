@@ -21,6 +21,7 @@ action () {
     # important paths
     export ETV_BASE="${this_dir}"
     export ETV_MODULES="${ETV_BASE}/modules"
+    export ETV_SOFTWARE="${ETV_BASE}/data/software"
 
     # set up software stack by using a recent LCG view
     source "/cvmfs/sft.cern.ch/lcg/views/LCG_105/x86_64-centos7-gcc12-opt/setup.sh"
@@ -30,8 +31,8 @@ action () {
     #_setup_grid_variables || return "${?}"
 
     # additional dependencies (law, order, scinum)
-    export PYTHONPATH="${ETV_BASE}:${ETV_MODULES}/law:${ETV_MODULES}/order:${ETV_MODULES}/scinum:${ETV_MODULES}/luigi:${PYTHONPATH}"
-    export PATH="${ETV_BASE}/bin:${ETV_MODULES}/law/bin:${ETV_MODULES}/luigi/bin:${PATH}"
+    export PYTHONPATH="${ETV_BASE}:${ETV_MODULES}/law:${ETV_MODULES}/order:${ETV_MODULES}/scinum:${ETV_MODULES}/luigi:${ETV_SOFTWARE}/x86_64-centos7-gcc12-opt/lib/python3.9/site-packages:${PYTHONPATH}"
+    export PATH="${ETV_BASE}/bin:${ETV_MODULES}/law/bin:${ETV_MODULES}/luigi/bin:${ETV_SOFTWARE}/x86_64-centos7-gcc12-opt/bin:${PATH}"
 
     # configuration and output paths for law
     export LAW_HOME="${this_dir}/.law"
