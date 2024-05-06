@@ -42,22 +42,22 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
     )
 
     htcondor_request_memory = law.BytesParameter(
-        default="1GB",
-        description="allocated memory for this job, the value can be accompained by the unit, e.g. 'GB'; default: '1 GB'",
+        default="2GB",
+        description="allocated memory for this job, the value can be accompained by the unit, e.g. 'GB'; default: '2 GB'",
         unit="MB",
         significant=False,
     )
 
     htcondor_request_disk = law.BytesParameter(
         default="15GB",
-        description="allocated hard drive storage for this job, the value can be accompained by the unit, e.g. 'GB'; default: '15 GB'",
+        description="allocated hard drive storage for this job, the value can be accompained by the unit, e.g. 'GB'; default: '10 GB'",
         unit="kB",
         significant=False,
     )
 
     htcondor_request_walltime = luigi.IntParameter(
-        default=86400,
-        description="maximal wall time of the job (duration of the actual job) in s; default: 86400",
+        default=10800,
+        description="maximal wall time of the job (duration of the actual job) in s; default: 10800",
         significant=False,
     )
 
@@ -93,6 +93,21 @@ class BaseHTCondorWorkflow(BaseTask, law.contrib.htcondor.HTCondorWorkflow):
     # htcondor_* parameters have to be ignored when branches of the workflow are executed, otherwise the execution of
     # the task inside the batch job likely fails
     exclude_params_branch = {
+        "htcondor_universe",
+        "htcondor_docker_image",
+        "htcondor_requirements",
+        "htcondor_request_cpus",
+        "htcondor_request_gpus",
+        "htcondor_request_memory",
+        "htcondor_request_walltime",
+        "htcondor_request_disk",
+        "htcondor_remote_job",
+        "htcondor_accounting_group",
+        "htcondor_run_as_owner",
+        "htcondor_x509userproxy",
+    }
+
+    exclude_params_req_get = {
         "htcondor_universe",
         "htcondor_docker_image",
         "htcondor_requirements",

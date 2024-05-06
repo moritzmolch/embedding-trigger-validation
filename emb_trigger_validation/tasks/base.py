@@ -14,6 +14,12 @@ from emb_trigger_validation.config import config_manager
 
 class BaseTask(law.Task):
 
+    exclude_params_req_get = {
+        "branches",
+        "workflow",
+        "tolerance",
+    }
+
     version = luigi.Parameter(
         default="v1",
         description=(
