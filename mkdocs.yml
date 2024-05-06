@@ -4,8 +4,17 @@ plugins:
 - mkdocstrings
 
 markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
   - pymdownx.arithmatex:
       generic: True
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.details
+  - pymdownx.superfences
   - md_in_html
   
 extra_javascript:
@@ -17,5 +26,8 @@ theme:
   name: material
 
 nav:
-- tau-triggers-2016.md
-- tau-triggers-2017.md
+- content/configuration.md
+- content/run-the-tool.md
+- content/tau-triggers-2016.md
+- content/tau-triggers-2017.md
+- content/tau-triggers-2018.md
