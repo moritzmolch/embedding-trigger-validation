@@ -16,6 +16,3 @@ The tau triggers considered for 2016 are listed in the `channels` section of the
 | $\tau_{\mathrm{h}}\tau_{\mathrm{h}}$  | `HLT_DoubleMediumIsoPFTau35_Trk1_eta2p1_Reg`            |
 |                                       | `HLT_DoubleMediumCombinedIsoPFTau35_Trk1_eta2p1_Reg`    |
 
-
-## Single-electron triggers
-
