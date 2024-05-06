@@ -1,183 +1,75 @@
 import awkward as ak
 import hist
 import law
-from law import localize_file_targets
-from law.util import human_bytes
-import luigi
 import numpy as np
-from order import Dataset, Process
-import re
-from typing import List
-import vector
 
-from emb_trigger_validation.tasks.base import ConfigTask, DatasetTask, RootProcessesTask
-from emb_trigger_validation.tasks.ntuples import ProduceTauTriggerNtuples
+from emb_trigger_validation.tasks.base import DatasetTask, ProcessCollectionTask
+from emb_trigger_validation.tasks.ntuples import MergeTauTriggerNtuples
 from emb_trigger_validation.tasks.remote import BaseHTCondorWorkflow
 
 # load additional packages
-law.contrib.load("root")
+law.contrib.load("awkward", "root")
 
 
-class HLTStore():
+class CreateCutflowHistogram(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflow):
 
-    def __init__(self):
-        self._hlt_paths = []
+    channel = law.Parameter(
+        default=law.NO_STR,
+        description="name of the channel",
+    )
 
-    def put(self, hlt_path):
-        is_member = False
-
-        for member in self._hlt_paths:
-            if (member.name == hlt_path.name):
-                has_same_modules = (len(member.modules) == len(hlt_path.modules)) and any(member.modules[i] == hlt_path.modules[i] for i in range(len(hlt_path.modules)))
-                has_same_modules_save_tags = (len(member.modules_save_tags) == len(hlt_path.modules_save_tags)) and any(member.modules_save_tags[i] == hlt_path.modules_save_tags[i] for i in range(len(hlt_path.modules_save_tags)))
-                if has_same_modules and has_same_modules_save_tags:
-                    is_member = True
-                    break
-                if not has_same_modules:
-                    raise Exception("HLT path '{}' has inconsistent list of modules over runs".format(hlt_path.name))
-                if not has_same_modules_save_tags:
-                    raise Exception("HLT path '{}' has inconsistent list of modules with save tag over runs".format(hlt_path.name))
-
-        if not is_member:
-            self._hlt_paths.append(hlt_path)
-
-    def get(self, name):
-        for member in self._hlt_paths:
-            if member.name == name:
-                return member
-        raise Exception("HLT path '{}' not found".format(name))
-
-    def names(self):
-        return [member.name for member in self._hlt_paths]
-
-    def to_dict(self):
-        return {
-            name: self.get(name)
-            for name in self.names()
-        }
-
-
-class HLT():
-    
-    def __init__(self, full_name, index, modules, modules_save_tags, run):
-        self.full_name = full_name
-        self.index = index
-        self.name = self.full_name
-        self.version = ""
-        m = re.match("^(.*)_(v\d+)$", self.full_name)
-        if m:
-            self.name = m.group(1)
-            self.version = m.group(2)
-        self.modules = modules
-        self.modules_save_tags = modules_save_tags
-        self.run = run
-
-    def get_module_index(self, module):
-        for i, _module in enumerate(self.modules):
-            if _module == module:
-                return i
-        raise RuntimeError("module '{}' not found in trigger path '{}'".format(module, self.name))
-
-
-class CreateCutflowHistograms(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflow):
+    trigger = law.Parameter(
+        default=law.NO_STR,
+        description="name of the trigger path, for which the cutflow histogram is created",
+    )
 
     def __init__(self, *args, **kwargs):
-        super(CreateCutflowHistograms, self).__init__(*args, **kwargs)
-
-    # depends on the branch map of the upstream task, hence this parameter is unset here
-    file_group_size = None
-
-    exclude_params_req_get = {"branches", "workflow"}
-
-    def create_branch_map(self):
-        # get the branch map from the upstream task
-        branch_map = ProduceTauTriggerNtuples.req(self, branches=":").create_branch_map()
-
-        # iterate over the branch map and update the payload
-        for branch_data in branch_map.values():
-            # get the hash from the upstream task and generate the output filename
-            output_file_hash = branch_data["hash"]
-            output_name = "hist_cutflow__{}__{}.root".format(self.dataset_inst.name, output_file_hash)
-
-            # update the branch data
-            branch_data.update({
-                "output_name": output_name,
-            })
-
-        # return the extended branch map
-        return branch_map
+        super().__init__(*args, **kwargs)
+        self._channel =  None
+        self._trigger =  None
+        if self.channel != law.NO_STR:
+            self._channel = self.get_campaign_config().get_channel(self.channel)
+        if self.trigger != law.NO_STR:
+            for trigger in self._channel.x.triggers:
+                if trigger["name"] == self.trigger:
+                    self._trigger = trigger
+                    break
+        #if self._trigger is None:
+        #    raise ValueError(f"trigger with name '{self.trigger}' not found")
 
     def modify_polling_status_line(self, status_line):
-        return "{} - dataset: {}".format(status_line, law.util.colored(self.dataset_inst.name, color='light_cyan'))
+        return "{} - dataset: {}".format(status_line, law.util.colored(self.get_dataset().name, color='light_cyan'))
+
+    def create_branch_map(self):
+        return {0: {}}
 
     def workflow_requires(self):
-        reqs = dict(super(CreateCutflowHistograms, self).workflow_requires())
-        reqs["ProduceTauTriggerNtuples"] = ProduceTauTriggerNtuples.req(self, branches=self.branches)
-        return reqs
+        return {
+            "MergeTauTriggerNtuples": MergeTauTriggerNtuples.req(self),
+        }
 
     def requires(self):
-        reqs = dict(super(CreateCutflowHistograms, self).requires())
-        reqs["ProduceTauTriggerNtuples"] = ProduceTauTriggerNtuples.req(self, branch=self.branch)
-        return reqs
+        return {
+            "MergeTauTriggerNtuples": MergeTauTriggerNtuples.req(self),
+        }
+
+    def get_channel(self):
+        return self._channel
+
+    def get_trigger(self):
+        return self._trigger
 
     def output(self):
-        return self.remote_target(self.branch_data["output_name"])
+        return self.remote_target("cutflow_histogram__{}__{}__{}.pickle".format(self.get_dataset().name, self.get_channel().name, self.get_trigger()["name"]))
 
-    def get_hlt(self, hlt_tree):
-        hlt_store = HLTStore()
-        for run in np.unique(hlt_tree["run"]):
-            paths = hlt_tree[hlt_tree["run"] == run][["hltPathName", "hltPathIndex", "hltPathModules", "hltPathModulesSaveTags"]]
-            for i in range(len(paths)):
-                hlt_store.put(
-                    HLT(
-                        paths[i]["hltPathName"],
-                        paths[i]["hltPathIndex"],
-                        paths[i]["hltPathModules"].to_list(),
-                        paths[i]["hltPathModulesSaveTags"].to_list(),
-                        run,
-                    )
-                )
-        return hlt_store
+    def get_final_state(self, events: ak.Array) -> ak.Array:
+        # create auxiliary arrays for final states
+        array_et = np.repeat("et", len(events))
+        array_mt = np.repeat("mt", len(events))
+        array_tt = np.repeat("tt", len(events))
+        array_none = np.repeat("none", len(events))
 
-    def get_gen_cut_mask(self, events):
-        tau_1 = events[["genParticlePt", "genParticleEta", "genParticlePhi", "genParticleMass"]][events["genParticlePdgId"] == -15][:, 0]
-        tau_2 = events[["genParticlePt", "genParticleEta", "genParticlePhi", "genParticleMass"]][events["genParticlePdgId"] == 15][:, 0]
-
-        tau_1 = vector.Array({
-            "pt": tau_1["genParticlePt"],
-            "eta": tau_1["genParticleEta"],
-            "phi": tau_1["genParticlePhi"],
-            "mass": tau_1["genParticleMass"],
-        })
-        tau_2 = vector.Array({
-            "pt": tau_2["genParticlePt"],
-            "eta": tau_2["genParticleEta"],
-            "phi": tau_2["genParticlePhi"],
-            "mass": tau_2["genParticleMass"],
-        })
-        tautau = tau_1 + tau_2
-
-        pt_pairs = np.concatenate((np.reshape(ak.to_numpy(tau_1.pt), (-1, 1)), np.reshape(ak.to_numpy(tau_2.pt), (-1, 1))), axis=1)
-        mask = (
-            (np.max(pt_pairs, axis=1) > 17)
-            & (np.min(pt_pairs, axis=1) > 8)
-            & (abs(tau_1.eta) < 2.4)
-            & (abs(tau_2.eta) < 2.4)
-            & (tautau.mass > 50)
-        )
-
-        return mask
-
-    def create_cutflow_histogram(self, events: ak.Array, hlt_paths):
-        cutflow = {}
-
-        weight = events["genWeight"]
-
-        # array with the final state string
-        array_et = np.repeat("et", len(weight))
-        array_mt = np.repeat("mt", len(weight))
-        array_tt = np.repeat("tt", len(weight))
-        array_none = np.repeat("none", len(weight))
+        # create array with the final state string
         final_state = ak.where(
             events["isElTau"],
             array_et,
@@ -191,130 +83,138 @@ class CreateCutflowHistograms(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkfl
                 )
             )
         )
+        
+        return final_state
 
-        for hlt_path_name, hlt_path in hlt_paths.items():            
+    def get_cutflow_histogram(self, events: ak.Array, trigger_name: str, trigger_table: list) -> hist.Hist:
+        # get the trigger name
+        trigger_name = self.get_trigger()["name"]
 
-            # create the cutflow histogram
-            h = hist.Hist(
-                hist.axis.StrCategory([hlt_path_name, ], name="hlt_path"),
-                hist.axis.StrCategory([], growth=True, name="dataset"),
-                hist.axis.StrCategory(["et", "mt", "tt", "none"], name="channel"),
-                hist.axis.StrCategory(["n_events", ] + hlt_path.modules_save_tags, name="module"),
-                storage=hist.storage.Weight(),
-            )
+        # get the trigger information
+        trigger = list([t for t in trigger_table if t["name"] == trigger_name])[0]
+        trigger_index = trigger["trigger_index"]
+        modules = trigger["modules"]
+        modules_save_tags = trigger["modules_save_tags"]
 
-            # check the index and the state of the last module for the considered HLT path
-            hlt_module_info = events[["hltPathLastModule", "hltPathLastModuleState"]][(events["hltPathIndex"] == hlt_path.index)]
+        # create the cutflow histogram
+        h = hist.Hist(
+            hist.axis.StrCategory([trigger_name, ], name="trigger"),
+            hist.axis.StrCategory([], growth=True, name="dataset"),
+            hist.axis.StrCategory(["et", "mt", "tt", "none"], name="channel"),
+            hist.axis.StrCategory(["n_events", ] + modules_save_tags, name="module"),
+            storage=hist.storage.Weight(),
+        )
 
-            n_pass = ak.ones_like(weight, dtype=int)
+        # column with generator weights
+        weight = events["genWeight"]
+
+        # column with final state strings
+        final_state = self.get_final_state(events)
+
+        # get mask for rows, which correspond to the regarded trigger
+        trigger_mask = events["hltPathIndex"] == trigger_index
+
+        with self.publish_step(f"processing trigger {trigger_name} ..."):
+
+            # get the number of events that have passed the selection, fill the histogram with it
+            self.publish_message(f"[1/{len(modules_save_tags) + 1}] processing filter n_events")
+            passed = ak.ones_like(events["event"], dtype=np.uint8)
             h.fill(
-                hlt_path=np.repeat(hlt_path_name, len(n_pass)),
-                dataset=self.dataset_inst.name,
+                trigger=trigger_name,
+                dataset=self.get_dataset().name,
                 channel=final_state,
-                module=np.repeat("n_events", len(n_pass)),
-                weight=n_pass * weight,
+                module="n_events",
+                weight=passed * weight,
             )
 
-            for module in hlt_path.modules_save_tags:
-                module_index = hlt_path.get_module_index(module)
+            for i, module_save_tags in enumerate(modules_save_tags):
+                self.publish_message(f"[{i + 2}/{len(modules_save_tags) + 1}] processing filter {module_save_tags} ...")
+                module_index = modules.index(module_save_tags)
 
-                # calculate number of events that have passed the filter
-                # this number has to be multiplied by the 
-                n_pass = ak.sum(
+                # get the number of events that have passed the filter
+                passed = ak.sum(
                     (
-                        hlt_module_info["hltPathLastModule"] == module_index & (hlt_module_info["hltPathLastModuleState"] == 1)
+                        events["hltPathLastModule"][trigger_mask] == module_index & (events["hltPathLastModuleState"][trigger_mask] == 1)
                     ) | (
-                        hlt_module_info["hltPathLastModule"] > module_index
+                        events["hltPathLastModule"][trigger_mask] > module_index
                     ),
                     axis=1,
                 )
+ 
+                # fill the histogram
                 h.fill(
-                    hlt_path=np.repeat(hlt_path_name, len(n_pass)),
-                    dataset=self.dataset_inst.name,
+                    trigger=trigger_name,
+                    dataset=self.get_dataset().name,
                     channel=final_state,
-                    module=np.repeat(module, len(n_pass)),
-                    weight=n_pass * weight,
+                    module=module_save_tags,
+                    weight=passed * weight,
                 )
 
-            cutflow[hlt_path_name] = h
+        return h
 
-        return cutflow
+    def run_branch(self, trigger: dict):
+        # get the trigger name
+        trigger_name = trigger["name"]
 
-    def run(self):
-        # get the task's inputs and outputs
-        input_ntuple = self.input()["ProduceTauTriggerNtuples"]
+        # get the output target
         output = self.output()
 
-        # emerge a message that histogram production is running
-        with self.publish_step("produce cutflow histogram for dataset '{}'".format(self.dataset_inst.name)):
+        # get the input targets
+        input_events = self.input()["MergeTauTriggerNtuples"]["events"]
+        input_triggers = self.input()["MergeTauTriggerNtuples"]["triggers"]
 
-            # load the tables
-            with input_ntuple.localize(mode="r") as tmp_target:
-                with tmp_target.load(formatter="uproot", mode="r") as f:
-                    events = f["tauTriggerNtuplizer/Events"].arrays(library="ak")
-                    trigger_table = f["tauTriggerNtuplizer/HLT"].arrays(library="ak")
+        # load the content from the input files
+        events = input_events.load(formatter="awkward")
+        trigger_table = input_triggers.load(formatter="json")
 
-            # apply the events selection and produce the cutflow histogram
-            gen_cut_mask = self.get_gen_cut_mask(events)
-            events = events[gen_cut_mask]
-            hlt_paths = self.get_hlt(trigger_table).to_dict()
-            cutflow = self.create_cutflow_histogram(events, hlt_paths)
+        # create the cutflow histogram
+        h = self.get_cutflow_histogram(events, trigger_name, trigger_table)
 
-        output.dump(cutflow, formatter="pickle")
-
-
-class MergeCutflowHistograms(DatasetTask):
-
-    def requires(self):
-        reqs = dict(super(MergeCutflowHistograms, self).requires())
-        reqs["CreateCutflowHistograms"] = CreateCutflowHistograms.req(self, branches=":")
-        return reqs
-
-    def output(self):
-        return self.local_target("cutflow_histogram_merged__{}.pickle".format(self.dataset_inst.name))
+        # pickle the histogram
+        output.dump(h, formatter="pickle")
 
     def run(self):
-        # get the task's inputs and outputs
-        input_cutflows = self.input()["CreateCutflowHistograms"]["collection"]
-        output = self.output()
-
-        # initialize variable for the merged cutflow
-        cutflow = {}
-
-        # load the input ntuples
-        with localize_file_targets(input_cutflows.targets, mode="r") as local_targets:
-            # number of files, needed for progress monitoring
-            n_files = len(local_targets)
-
-            # loop over local targets and invoke progress monitoring
-            for i, (chunk, local_target) in enumerate(local_targets.items()):
-
-                # load the file and concatenate events and trigger tables
-                with self.publish_step(
-                    "[{}/{}] loading file {} (size {} {})".format(
-                        i + 1, n_files, local_target.basename, *human_bytes(local_target.stat().st_size, unit="MB"))
-                ):
-                    # add up the cutflow histograms for all HLT paths
-                    _cutflow = local_target.load(formatter="pickle")
-                    for trigger_name in _cutflow.keys():
-                        if trigger_name not in cutflow:
-                            cutflow[trigger_name] = _cutflow[trigger_name]
-                        else:
-                            cutflow[trigger_name] += _cutflow[trigger_name]
- 
-        # finally dump the merged histograms into the output file
-        output.dump(cutflow, formatter="pickle")
+        self.run_branch(self.get_trigger())
 
 
-class MergeCutflowHistogramsWrapper(RootProcessesTask, law.WrapperTask):
+class CreateCutflowHistogramsForDataset(CreateCutflowHistogram):
+
+    def create_branch_map(self):
+        branch_map = []
+        for channel in self.get_campaign_config().channels:
+            for trigger in channel.x.triggers:
+                branch_map.append({
+                    "channel": channel.name,
+                    "trigger": trigger["name"],
+                })
+        return {i: branch for i, branch in enumerate(branch_map)}
+
+    def get_channel(self):
+        return self.get_campaign_config().get_channel(self.branch_data["channel"])
+
+    def get_trigger(self):
+        for trigger in self.get_channel().x.triggers:
+            if trigger["name"] == self.branch_data["trigger"]:
+                return trigger
+
+    def run(self):
+        self.run_branch(self.get_trigger())
+
+
+class CreateCutflowHistogramsWrapper(ProcessCollectionTask, law.WrapperTask):
 
     def requires(self):
         reqs = []
-        for dataset in self.get_datasets_from_root_processes().values():
-            reqs.append(
-                MergeCutflowHistograms.req(
-                    self,
-                    dataset=dataset.name,
+        for process in self.get_processes().values():
+            htcondor_request_memory = "2GB"
+            if process.name.startswith("dyjets_ll"):
+                htcondor_request_memory = "4GB"
+            for dataset in self.get_datasets_with_process(process).values():
+                reqs.append(
+                    CreateCutflowHistogramsForDataset.req(
+                        self,
+                        dataset=dataset.name,
+                        htcondor_request_memory=htcondor_request_memory,
+                    )
                 )
-            )
         return reqs
