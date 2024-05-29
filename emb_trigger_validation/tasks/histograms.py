@@ -1,6 +1,7 @@
 import awkward as ak
 import hist
 import law
+import luigi
 import numpy as np
 import os
 
@@ -23,6 +24,8 @@ class CreateCutflowHistogram(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflo
         default=law.NO_STR,
         description="name of the trigger path, for which the cutflow histogram is created",
     )
+
+    htcondor_request_memory = "4GB"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -178,6 +181,8 @@ class CreateCutflowHistogram(DatasetTask, BaseHTCondorWorkflow, law.LocalWorkflo
 
 class CreateCutflowHistogramsForDataset(CreateCutflowHistogram):
 
+    htcondor_request_memory = "4GB"
+
     def create_branch_map(self):
         branch_map = []
         for channel in self.get_campaign_config().channels:
@@ -197,7 +202,7 @@ class CreateCutflowHistogramsForDataset(CreateCutflowHistogram):
                 return trigger
 
     def path(self, store, *parts, **kwargs) -> str:
-        return os.path.join(store, CreateCutflowHistogram.__name__, self.get_campaign_config().name, self.get_dataset().name, self.version, *parts)
+        return os.path.join(store, self.version, CreateCutflowHistogram.__name__, self.get_campaign_config().name, self.get_dataset().name, *parts)
 
     def run(self):
         self.run_branch(self.get_trigger())
@@ -205,18 +210,17 @@ class CreateCutflowHistogramsForDataset(CreateCutflowHistogram):
 
 class CreateCutflowHistogramWrapper(ProcessCollectionTask, law.WrapperTask):
 
+    retries = luigi.IntParameter(default=1)
+
     def requires(self):
         reqs = []
         for process in self.get_processes().values():
-            htcondor_request_memory = "2GB"
-            if process.name.startswith("dyjets_ll"):
-                htcondor_request_memory = "4GB"
             for dataset in self.get_datasets_with_process(process).values():
                 reqs.append(
                     CreateCutflowHistogramsForDataset.req(
                         self,
                         dataset=dataset.name,
-                        htcondor_request_memory=htcondor_request_memory,
+                        retries=self.retries,
                     )
                 )
         return reqs

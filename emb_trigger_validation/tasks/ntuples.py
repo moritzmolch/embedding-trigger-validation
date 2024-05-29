@@ -40,6 +40,12 @@ class ProduceTauTriggerNtuples(CMSSWCommandTask, DatasetTask, BaseHTCondorWorkfl
             "htcondor_request_cpus": params.get("threads", 1),
         })
 
+        # this is a dirty fix ... for 2017, 4 files of the DY sample are consistently not reachable, so the acceptance
+        # and tolerance for this sample are hard-coded here
+        if params["dataset"] == "dy_ll_m50_madgraph" and params["campaign"] == "ul_2017":
+            params["tolerance"] = 0.01
+            params["acceptance"] = 0.99
+
         return params
 
     def create_branch_map(self):
@@ -274,8 +280,9 @@ class MergeTauTriggerNtuples(DatasetTask):
         trigger_table = []
 
         # merge all targets, track progress
-        n_targets = len(input_ntuple_collection.targets)
-        for i, target in enumerate(input_ntuple_collection.targets.values()):
+        targets = list(input_ntuple_collection.iter_existing())
+        n_targets = len(targets)
+        for i, target in enumerate(targets):
 
             # log progress and size of loaded files
             self.publish_message("load file {}/{} with size {:.2f}{}".format(i + 1, n_targets, *human_bytes(target.stat().st_size, unit="MB")))
