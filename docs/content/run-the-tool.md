@@ -20,11 +20,11 @@ cd embedding-trigger-validation
 # set up the shell environment
 source setup.sh
 
-# install CMSSW (if it has not happened before)
+# install CMSSW (only has to be done once per campaign)
 law run SetupCMSSWForCampaign --campaign ul_2016preVFP --cmssw-threads 4
 
 # run the whole workflow with one command
-law run PlotEfficiencyComparisonWrapper --campaign ul_2016preVFP --processes emb,dyjets_ll
+law run PlotEfficiencyComparisonWrapper --campaign ul_2016preVFP --processes emb,dyjets_ll --workers 5
 ```
 
 You find the output plots of this command in `data/store/<version>/PlotEfficiencyComparison/<campaign>`. If you didn't further specify the version tag via the `--version` argument, `version` should have the value `v1`.
@@ -57,5 +57,7 @@ The command
 law run PlotEfficiencyComparisonWrapper --processes emb,dyjets_ll --campaign ul_2016preVFP --workers 5
 ```
 produces the final comparison plots. Here, you can specify different options for ...
+
 - ... producing different filetypes with `--extension` (e.g. `pdf`, `png`, `jpg`, `svg`),
+
 - ... defining pre- and postfixes with `--prefix` and `--postfix` for custom filenames.
